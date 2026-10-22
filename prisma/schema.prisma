@@ -1,0 +1,459 @@
+// Shreeji Marketing - MySQL 8. See docs/DATABASE_SCHEMA.md
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum PageTemplate {
+  DEFAULT
+  CONTACT
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  WON
+  LOST
+  SPAM
+}
+
+enum ProjectCategory {
+  DIGITAL_MARKETING
+  WEB_DEVELOPMENT
+  WEB_APPLICATION
+}
+
+enum StructuredDataMode {
+  AUTO
+  NONE
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique @db.VarChar(190)
+  name         String    @db.VarChar(120)
+  passwordHash String    @db.VarChar(255)
+  role         Role      @default(EDITOR)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sessions  Session[]
+  posts     Post[]
+  auditLogs AuditLog[]
+  media     Media[]
+  notes     LeadNote[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    Int
+  expiresAt DateTime
+  ipHash    String?  @db.VarChar(64)
+  userAgent String?  @db.VarChar(255)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model SeoMeta {
+  id                Int                @id @default(autoincrement())
+  title             String?            @db.VarChar(255)
+  description       String?            @db.VarChar(500)
+  canonicalUrl      String?            @db.VarChar(500)
+  robotsIndex       Boolean            @default(true)
+  robotsFollow      Boolean            @default(true)
+  includeInSitemap  Boolean            @default(true)
+  focusKeyword      String?            @db.VarChar(120)
+  secondaryKeywords Json?
+  ogTitle           String?            @db.VarChar(255)
+  ogDescription     String?            @db.VarChar(500)
+  ogMediaId         Int?
+  structuredData    StructuredDataMode @default(AUTO)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  ogMedia Media?   @relation("SeoOgMedia", fields: [ogMediaId], references: [id], onDelete: SetNull)
+  page    Page?
+  post    Post?
+  service Service?
+
+  @@index([ogMediaId])
+}
+
+model Media {
+  id           Int      @id @default(autoincrement())
+  fileName     String   @db.VarChar(255)
+  title        String   @db.VarChar(255)
+  altText      String   @default("") @db.VarChar(500)
+  mimeType     String   @db.VarChar(80)
+  sizeBytes    Int
+  width        Int?
+  height       Int?
+  folder       String   @default("general") @db.VarChar(80)
+  checksum     String   @db.VarChar(64)
+  uploadedById Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  uploadedBy  User?        @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  blob        MediaBlob?
+  pages       Page[]
+  posts       Post[]
+  services    Service[]
+  projects    Project[]
+  teamMembers TeamMember[]
+  seoOg       SeoMeta[]    @relation("SeoOgMedia")
+
+  @@index([folder])
+  @@index([mimeType])
+  @@index([uploadedById])
+}
+
+model MediaBlob {
+  mediaId Int   @id
+  data    Bytes @db.LongBlob
+
+  media Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+}
+
+model Page {
+  id              Int           @id @default(autoincrement())
+  title           String        @db.VarChar(190)
+  slug            String        @unique @db.VarChar(160)
+  template        PageTemplate  @default(DEFAULT)
+  excerpt         String?       @db.Text
+  blocks          Json
+  featuredMediaId Int?
+  status          PublishStatus @default(DRAFT)
+  publishedAt     DateTime?
+  isSystem        Boolean       @default(false)
+  seoId           Int?          @unique
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  featuredMedia Media?   @relation(fields: [featuredMediaId], references: [id], onDelete: SetNull)
+  seo           SeoMeta? @relation(fields: [seoId], references: [id], onDelete: SetNull)
+
+  @@index([status, publishedAt])
+  @@index([featuredMediaId])
+}
+
+model ServiceCategory {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(120)
+  slug        String    @unique @db.VarChar(120)
+  description String?   @db.Text
+  sortOrder   Int       @default(0)
+  services    Service[]
+}
+
+model Service {
+  id              Int           @id @default(autoincrement())
+  categoryId      Int
+  title           String        @db.VarChar(190)
+  slug            String        @unique @db.VarChar(160)
+  summary         String        @db.VarChar(500)
+  icon            String        @default("sparkles") @db.VarChar(40)
+  heroHeading     String?       @db.VarChar(255)
+  intro           String?       @db.Text
+  benefits        Json?
+  included        Json?
+  process         Json?
+  blocks          Json?
+  /// Section headings, button labels/links and visibility of this service's page. See src/lib/service-page.ts.
+  pageOptions     Json?
+  featuredMediaId Int?
+  status          PublishStatus @default(DRAFT)
+  publishedAt     DateTime?
+  sortOrder       Int           @default(0)
+  seoId           Int?          @unique
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  category      ServiceCategory   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  featuredMedia Media?            @relation(fields: [featuredMediaId], references: [id], onDelete: SetNull)
+  seo           SeoMeta?          @relation(fields: [seoId], references: [id], onDelete: SetNull)
+  faqs          Faq[]
+  related       ServiceRelation[] @relation("ServiceRelationFrom")
+  relatedBy     ServiceRelation[] @relation("ServiceRelationTo")
+
+  @@index([status, sortOrder])
+  @@index([categoryId])
+  @@index([featuredMediaId])
+}
+
+model ServiceRelation {
+  serviceId Int
+  relatedId Int
+
+  service Service @relation("ServiceRelationFrom", fields: [serviceId], references: [id], onDelete: Cascade)
+  related Service @relation("ServiceRelationTo", fields: [relatedId], references: [id], onDelete: Cascade)
+
+  @@id([serviceId, relatedId])
+  @@index([relatedId])
+}
+
+model PostCategory {
+  id          Int     @id @default(autoincrement())
+  name        String  @db.VarChar(120)
+  slug        String  @unique @db.VarChar(120)
+  description String? @db.Text
+  posts       Post[]
+}
+
+model Tag {
+  id    Int       @id @default(autoincrement())
+  name  String    @db.VarChar(80)
+  slug  String    @unique @db.VarChar(80)
+  posts PostTag[]
+}
+
+model PostTag {
+  postId Int
+  tagId  Int
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@index([tagId])
+}
+
+model Post {
+  id              Int           @id @default(autoincrement())
+  title           String        @db.VarChar(190)
+  slug            String        @unique @db.VarChar(160)
+  excerpt         String?       @db.Text
+  blocks          Json
+  featuredMediaId Int?
+  authorId        Int
+  categoryId      Int?
+  status          PublishStatus @default(DRAFT)
+  publishedAt     DateTime?
+  readingMinutes  Int           @default(1)
+  seoId           Int?          @unique
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  author        User          @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  category      PostCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  featuredMedia Media?        @relation(fields: [featuredMediaId], references: [id], onDelete: SetNull)
+  seo           SeoMeta?      @relation(fields: [seoId], references: [id], onDelete: SetNull)
+  tags          PostTag[]
+
+  @@index([status, publishedAt])
+  @@index([categoryId])
+  @@index([authorId])
+  @@index([featuredMediaId])
+}
+
+model Menu {
+  id    Int        @id @default(autoincrement())
+  key   String     @unique @db.VarChar(60)
+  name  String     @db.VarChar(120)
+  items MenuItem[]
+}
+
+model MenuItem {
+  id           Int     @id @default(autoincrement())
+  menuId       Int
+  parentId     Int?
+  label        String  @db.VarChar(120)
+  href         String  @db.VarChar(500)
+  sortOrder    Int     @default(0)
+  openInNewTab Boolean @default(false)
+  isActive     Boolean @default(true)
+
+  menu     Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parent   MenuItem?  @relation("MenuItemTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children MenuItem[] @relation("MenuItemTree")
+
+  @@index([menuId, sortOrder])
+  @@index([parentId])
+}
+
+model Setting {
+  key         String   @id @db.VarChar(80)
+  value       Json
+  updatedAt   DateTime @updatedAt
+  updatedById Int?
+}
+
+model Lead {
+  id        Int        @id @default(autoincrement())
+  firstName String     @db.VarChar(100)
+  lastName  String     @default("") @db.VarChar(100)
+  email     String     @db.VarChar(190)
+  phone     String     @default("") @db.VarChar(40)
+  company   String     @default("") @db.VarChar(160)
+  service   String     @default("") @db.VarChar(160)
+  message   String     @db.Text
+  status    LeadStatus @default(NEW)
+  source    String     @default("") @db.VarChar(255)
+  ipHash    String?    @db.VarChar(64)
+  userAgent String?    @db.VarChar(255)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  notes LeadNote[]
+
+  @@index([status, createdAt])
+  @@index([email])
+}
+
+model LeadNote {
+  id        Int      @id @default(autoincrement())
+  leadId    Int
+  authorId  Int?
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+
+  lead   Lead  @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([leadId])
+  @@index([authorId])
+}
+
+model Project {
+  id          Int             @id @default(autoincrement())
+  name        String          @db.VarChar(160)
+  slug        String          @unique @db.VarChar(160)
+  category    ProjectCategory
+  tags        Json?
+  summary     String?         @db.VarChar(500)
+  externalUrl String?         @db.VarChar(500)
+  mediaId     Int?
+  sortOrder   Int             @default(0)
+  status      PublishStatus   @default(PUBLISHED)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  media Media? @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+
+  @@index([status, sortOrder])
+  @@index([mediaId])
+}
+
+model Testimonial {
+  id         Int           @id @default(autoincrement())
+  name       String        @db.VarChar(120)
+  location   String        @default("") @db.VarChar(120)
+  company    String        @default("") @db.VarChar(160)
+  quote      String        @db.Text
+  isVerified Boolean       @default(false)
+  status     PublishStatus @default(DRAFT)
+  sortOrder  Int           @default(0)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([status, isVerified, sortOrder])
+}
+
+model Faq {
+  id         Int           @id @default(autoincrement())
+  question   String        @db.VarChar(500)
+  answer     String        @db.Text
+  category   String        @default("General") @db.VarChar(60)
+  serviceId  Int?
+  showOnHome Boolean       @default(false)
+  sortOrder  Int           @default(0)
+  status     PublishStatus @default(PUBLISHED)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  service Service? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([status, sortOrder])
+  @@index([serviceId])
+}
+
+model Redirect {
+  id         Int      @id @default(autoincrement())
+  fromPath   String   @unique @db.VarChar(500)
+  toPath     String   @db.VarChar(500)
+  statusCode Int      @default(301)
+  isActive   Boolean  @default(true)
+  hits       Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  action     String   @db.VarChar(80)
+  entityType String   @default("") @db.VarChar(60)
+  entityId   String   @default("") @db.VarChar(60)
+  summary    String   @default("") @db.VarChar(500)
+  ipHash     String?  @db.VarChar(64)
+  createdAt  DateTime @default(now())
+  /// CREATE, UPDATE, DELETE, LOGIN, LOGOUT, LOGIN_FAILED, PUBLISH, UNPUBLISH, EXPORT or OTHER.
+  actionType String   @default("OTHER") @db.VarChar(20)
+  /// Human label of the admin area, e.g. "Pages".
+  module     String   @default("") @db.VarChar(60)
+  /// Name of the acting user at the time (kept even if the user is later removed).
+  userName   String   @default("") @db.VarChar(120)
+  /// Title or name of the affected record at the time.
+  entityName String   @default("") @db.VarChar(190)
+  /// Changed fields only, before and after. Sensitive keys are redacted before saving.
+  oldValues  Json?
+  newValues  Json?
+  /// Groups every entry written by one request.
+  requestId  String   @default("") @db.VarChar(64)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([actionType, createdAt])
+  @@index([module, createdAt])
+  @@index([requestId])
+}
+
+model TeamMember {
+  id        Int           @id @default(autoincrement())
+  name      String        @db.VarChar(120)
+  /// Short designation shown in bronze, e.g. "CEO".
+  role      String        @db.VarChar(120)
+  /// Optional full title shown under the role, e.g. "Chief Executive Officer".
+  title     String        @default("") @db.VarChar(160)
+  photoId   Int?
+  status    PublishStatus @default(PUBLISHED)
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  photo Media? @relation(fields: [photoId], references: [id], onDelete: SetNull)
+
+  @@index([status, sortOrder])
+}
+
+model RateLimit {
+  key         String   @id @db.VarChar(190)
+  count       Int      @default(0)
+  windowStart DateTime
+}

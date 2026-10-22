@@ -1,0 +1,16 @@
+import { chromium } from "@playwright/test";
+const b = await chromium.launch();
+const ctx = await b.newContext({ storageState: "test-results/admin-state.json", baseURL: "http://localhost:3100" });
+const p = await ctx.newPage();
+await p.goto("/admin/pages/new");
+await p.getByLabel("Title").first().fill("Dbg Page");
+await p.getByLabel("URL slug").fill("e2e-dbg2");
+await p.getByLabel("SEO title").fill("My Custom SEO Title Zed");
+console.log("seoTitle input value:", await p.getByLabel("SEO title").inputValue());
+await p.getByLabel("Add a block").selectOption("paragraph");
+await p.getByRole("button", { name: "Add block" }).click();
+await p.getByLabel("Text").last().fill("hi there");
+await p.getByRole("button", { name: "Create page" }).click();
+await p.waitForURL(/\/admin\/pages\/\d+/);
+console.log("saved; seo title field now:", await p.getByLabel("SEO title").inputValue());
+await b.close();

@@ -1,0 +1,223 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand: forest green (logo wordmark) */
+  --color-forest-950: #032516;
+  --color-forest-900: #053620;
+  --color-forest-800: #0a4a2d;
+  --color-forest-700: #14613d;
+  --color-forest-100: #e3eee7;
+  --color-forest-50: #f1f6f3;
+  /* Brand: bronze (logo "MARKETING") */
+  --color-bronze-700: #8a5614;
+  --color-bronze-600: #a86a1e;
+  --color-bronze-500: #c27e2a;
+  --color-bronze-300: #e4b26a;
+  --color-bronze-100: #f7e9d2;
+  /* Brand: gold (logo gradient highlight) */
+  --color-gold-500: #b47f2b;
+  --color-gold-300: #f1da4a;
+  --color-gold-200: #f6e88f;
+  /* Neutrals for readability only */
+  --color-paper: #fbf8f1;
+  --color-ink: #10261a;
+  --color-muted: #4d5f54;
+  --color-line: #e3e7e1;
+  --color-danger: #9b2c1f;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-jakarta), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-field: 10px;
+  --radius-card: 16px;
+  --radius-panel: 24px;
+
+  --shadow-soft: 0 10px 30px -12px rgb(5 54 32 / 0.25);
+  --shadow-lift: 0 18px 40px -16px rgb(5 54 32 / 0.35);
+
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root {
+  --brand-gradient: linear-gradient(135deg, #053620 0%, #7a7a2e 45%, #f1da4a 70%, #b47f2b 100%);
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Layout system. `container` overrides Tailwind's built-in (breakpoint-stepped) container with one fixed width. */
+@utility container {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1200px;
+  padding-inline: 1rem;
+  @media (min-width: 640px) {
+    padding-inline: 1.5rem;
+  }
+  @media (min-width: 1024px) {
+    padding-inline: 2rem;
+  }
+}
+
+/* The layout row inside a container: full width, allowed to shrink (grids/sliders inside must not force overflow). */
+@utility row {
+  width: 100%;
+  min-width: 0;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    color: var(--color-forest-900);
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-gold-300);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: var(--color-gold-300);
+    color: var(--color-forest-950);
+  }
+}
+
+/* Fluid type scale */
+.t-display {
+  font-size: clamp(2.5rem, 5.5vw + 1rem, 5rem);
+  line-height: 1.05;
+  font-weight: 800;
+}
+.t-h1 {
+  font-size: clamp(2.125rem, 3.5vw + 1rem, 3.5rem);
+  line-height: 1.1;
+  font-weight: 800;
+}
+.t-h2 {
+  font-size: clamp(1.75rem, 2.2vw + 1rem, 2.75rem);
+  line-height: 1.15;
+  font-weight: 700;
+}
+.t-h3 {
+  font-size: clamp(1.25rem, 1vw + 1rem, 1.625rem);
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.text-gradient {
+  background: linear-gradient(100deg, #f1da4a 0%, #e4b26a 50%, #c27e2a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-brand-glow {
+  background:
+    radial-gradient(60% 60% at 85% 10%, rgb(241 218 74 / 0.22) 0%, transparent 60%),
+    radial-gradient(50% 60% at 0% 100%, rgb(194 126 42 / 0.25) 0%, transparent 60%),
+    var(--color-forest-900);
+}
+
+.rule-gradient {
+  height: 3px;
+  background: var(--brand-gradient);
+  border-radius: 999px;
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, #e9ece7 25%, #f5f6f2 37%, #e9ece7 63%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 10px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spinner {
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  animation: spin 0.7s linear infinite;
+}
+
+.prose-brand p,
+.prose-brand li {
+  color: var(--color-ink);
+}
+.prose-brand a {
+  color: var(--color-bronze-700);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose-brand a:hover {
+  color: var(--color-forest-700);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Server-rendered reveal states must never hide content for reduced-motion users, even before hydration. */
+  [style*="opacity: 0"],
+  [style*="opacity:0;"],
+  [style="opacity:0"],
+  [style*="translateY(105%)"] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+  .skeleton,
+  .spinner {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+
+/* Navigation loader (see NavigationProgress): the bar creeps toward 85% until the new page replaces it. */
+@keyframes nav-progress {
+  from { transform: scaleX(0.05); }
+  to { transform: scaleX(0.85); }
+}
+.nav-progress-bar { animation: nav-progress 8s cubic-bezier(0.1, 0.6, 0.2, 1) forwards; }
+@keyframes nav-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.nav-overlay { animation: nav-overlay-in 0.25s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress-bar { animation: none; transform: scaleX(0.6); }
+  .nav-overlay { animation: none; }
+}

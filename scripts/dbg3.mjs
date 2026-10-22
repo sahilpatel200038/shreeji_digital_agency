@@ -1,0 +1,12 @@
+import { chromium } from "@playwright/test";
+const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+const b = await chromium.launch();
+const ctx = await b.newContext({ storageState: "test-results/admin-state.json", baseURL: "http://localhost:3100" });
+const p = await ctx.newPage();
+p.on("response", async (r) => r.url().includes("/api/admin/media") && console.log("API", r.request().method(), r.status(), (await r.text()).slice(0, 200)));
+p.on("console", (m) => m.type() === "error" && console.log("console error:", m.text()));
+await p.goto("/admin/media?folder=e2e");
+await p.getByLabel("Choose image files").setInputFiles({ name: "e2e-pixel.png", mimeType: "image/png", buffer: png });
+await p.waitForTimeout(2500);
+console.log((await p.locator("main").innerText()).slice(0, 600));
+await b.close();

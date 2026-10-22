@@ -1,0 +1,12 @@
+import { chromium } from "@playwright/test";
+const b = await chromium.launch();
+const ctx = await b.newContext({ baseURL: "http://localhost:3100" });
+const p = await ctx.newPage();
+await p.goto("/admin/login");
+await p.getByLabel("Email").fill("admin@shreeji.local");
+await p.getByLabel("Password").fill("ShreejiAdmin#2026!");
+await p.getByRole("button", { name: "Sign in" }).click();
+await p.waitForTimeout(3000);
+console.log("url after login:", p.url());
+console.log((await p.locator("body").innerText()).slice(0, 300));
+await b.close();

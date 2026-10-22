@@ -1,0 +1,16 @@
+import { chromium } from "@playwright/test";
+const b = await chromium.launch();
+const ctx = await b.newContext({ baseURL: "http://localhost:3100" });
+const p = await ctx.newPage();
+p.on("console", (m) => console.log("console:", m.type(), m.text().slice(0, 200)));
+p.on("response", (r) => r.request().method() === "POST" && console.log("POST", r.status(), r.url()));
+await p.goto("/admin/login");
+await p.getByLabel("Email").fill("admin@shreeji.local");
+await p.getByLabel("Password").fill("ShreejiAdmin#2026!");
+await p.getByRole("button", { name: "Sign in" }).click();
+await p.waitForURL(/\/admin$/);
+await p.getByRole("button", { name: "Sign out" }).first().click();
+await p.waitForTimeout(3000);
+console.log("url after signout:", p.url());
+console.log("cookies:", (await ctx.cookies()).map((c) => c.name));
+await b.close();
