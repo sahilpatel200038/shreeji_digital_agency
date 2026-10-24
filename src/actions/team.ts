@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { AppError, fieldErrorsFrom, revalidateSite, run, type ActionResult } from "@/lib/action";
+import { assertEditLocks, assertNotLockedByOthers, lockKey } from "@/lib/edit-lock";
 import { requirePermission } from "@/lib/auth/session";
 import { audit } from "@/lib/audit";
 import { diffFields } from "@/lib/audit-format";
@@ -21,6 +22,7 @@ export async function saveTeamMember(_prev: unknown, fd: FormData): Promise<Acti
   return run(async () => {
     const user = await requirePermission("content:write");
     const id = Number(fd.get("id")) || 0;
+    if (id) await assertEditLocks(user, [lockKey.team(id)], fd);
     const parsed = teamSchema.safeParse({
       name: fd.get("name") ?? "",
       role: fd.get("role") ?? "",
@@ -51,6 +53,7 @@ export async function deleteTeamMember(fd: FormData): Promise<void> {
   await flashOnError("/admin/team", async () => {
     const user = await requirePermission("content:delete");
     const id = Number(fd.get("id"));
+    await assertNotLockedByOthers(user, [lockKey.team(id)]);
     const m = await db.teamMember.findUnique({ where: { id } });
     if (!m) throw new AppError("That team member no longer exists.");
     await db.teamMember.delete({ where: { id } });
@@ -60,10 +63,55 @@ export async function deleteTeamMember(fd: FormData): Promise<void> {
   });
 }
 
+/** Moves a member one place up or down. Order numbers are renumbered 1..n so duplicates can never make "up" a no-op. */
+export async function moveTeamMember(fd: FormData): Promise<void> {
+  await flashOnError("/admin/team", async () => {
+    const user = await requirePermission("content:write");
+    const id = Number(fd.get("id"));
+    const dir = fd.get("dir") === "up" ? -1 : 1;
+    await assertNotLockedByOthers(user, [lockKey.team(id)]);
+    await db.$transaction(async (tx) => {
+      const all = await tx.teamMember.findMany({ orderBy: [{ sortOrder: "asc" }, { id: "asc" }], select: { id: true } });
+      const i = all.findIndex((m) => m.id === id);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= all.length) return;
+      [all[i], all[j]] = [all[j], all[i]];
+      for (const [idx, m] of all.entries()) await tx.teamMember.update({ where: { id: m.id }, data: { sortOrder: idx + 1 } });
+    });
+    await audit(user.id, "team.reorder", "team", id, `Moved ${dir < 0 ? "up" : "down"}`);
+    revalidateSite();
+    return "Order updated";
+  });
+}
+
+const sectionSchema = z.object({
+  teamEyebrow: z.string().trim().max(60),
+  teamTitle: z.string().trim().min(1, "A heading is required").max(120),
+});
+
+/** The label and heading above the team on the About page (stored with the page banner settings). */
+export async function saveTeamSection(_prev: unknown, fd: FormData): Promise<ActionResult> {
+  return run(async () => {
+    const user = await requirePermission("settings:write");
+    await assertEditLocks(user, [lockKey.setting("banners")], fd);
+    const parsed = sectionSchema.safeParse({ teamEyebrow: fd.get("teamEyebrow") ?? "", teamTitle: fd.get("teamTitle") ?? "" });
+    if (!parsed.success) throw new AppError("Please fix the highlighted fields.", fieldErrorsFrom(parsed.error));
+    const prev = await db.setting.findUnique({ where: { key: "banners" } });
+    const before = (prev?.value ?? {}) as Record<string, unknown>;
+    const value = { ...before, ...parsed.data };
+    await db.setting.upsert({ where: { key: "banners" }, create: { key: "banners", value, updatedById: user.id }, update: { value, updatedById: user.id } });
+    const changes = diffFields(before, value, ["teamEyebrow", "teamTitle"]);
+    await audit(user.id, "team.update", "team", "section", "Updated the team section heading", { entityName: "Team section", before: changes?.before, after: changes?.after });
+    revalidateSite();
+    return { ok: true, message: "Team section heading saved." };
+  });
+}
+
 export async function setTeamStatus(fd: FormData): Promise<void> {
   await flashOnError("/admin/team", async () => {
     const user = await requirePermission("content:write");
     const id = Number(fd.get("id"));
+    await assertNotLockedByOthers(user, [lockKey.team(id)]);
     const status = fd.get("status") === "PUBLISHED" ? "PUBLISHED" : "DRAFT";
     const m = await db.teamMember.findUnique({ where: { id } });
     if (!m) throw new AppError("That team member no longer exists.");

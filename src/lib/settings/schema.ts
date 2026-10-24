@@ -52,6 +52,7 @@ export const contactSchema = z.object({
   callLabel: text(40, "Call us"),
   emailLabel: text(40, "Email us"),
   mapsLabel: text(60, "Open in Google Maps"),
+  hoursLabel: text(40, "Opening hours"),
 });
 
 export const socialSchema = z.object({
@@ -170,6 +171,54 @@ export const bannersSchema = z.object({
   blogText: text(300, "Practical guidance on marketing, SEO, branding and web development."),
   faqTitle: text(120, "Frequently asked questions"),
   faqText: text(300, "Quick answers about how we work. Cannot find yours? Ask us."),
+  /** Wording of the listing pages' own sections (banner label, section headings, call-to-action band). */
+  servicesEyebrow: text(60, "Our services"),
+  servicesCoreEyebrow: text(60, "What we do"),
+  servicesCoreTitle: text(120, "Our Core Services"),
+  servicesMoreEyebrow: text(60, "Also available"),
+  servicesMoreTitle: text(120, "More ways we can help"),
+  blogEyebrow: text(60, "Our blog"),
+  blogServicesTitle: text(120, "Services that grow your brand"),
+  blogServicesText: text(300, "Put these articles into practice with our team."),
+  faqEyebrow: text(60, "FAQ"),
+  faqCtaTitle: text(120, "Still have a question?"),
+  faqCtaText: text(300, "Send us a message and we will reply with a clear answer."),
+  faqCtaLabel: text(40, "Contact us"),
+  faqServicesTitle: text(120, "Explore our services"),
+  /** Services slider under the text of standard CMS pages (privacy, terms, ...). */
+  pageServicesTitle: text(120, "Our core services"),
+});
+
+/** The site header. Empty logo = the bundled mark; the navigation links themselves are the "header" menu. */
+export const headerSchema = z.object({
+  logoMediaId: mediaId,
+  /** Text lock-up beside the logo, two lines. */
+  brandName: text(30, "SHREEJI"),
+  brandTagline: text(30, "MARKETING"),
+  showCta: z.boolean().default(true),
+  ctaLabel: text(40, "Book Free Consultation"),
+  ctaHref: safeLink("/contact"),
+  ctaNewTab: z.boolean().default(false),
+});
+
+/**
+ * The site footer. The description, tagline and copyright live in `general`, phone/email/address in `contact`,
+ * social links in `social` and the link lists in the footer menus; Admin > Footer edits all of them in one place.
+ */
+export const footerSchema = z.object({
+  logoMediaId: mediaId,
+  brandName: text(30, "SHREEJI"),
+  brandTagline: text(30, "MARKETING"),
+  servicesHeading: text(40, "Services"),
+  companyHeading: text(40, "Company"),
+  contactHeading: text(40, "Contact"),
+  showServices: flagOn,
+  /** How many main services the footer lists (0 hides none; use showServices to hide the column). */
+  servicesLimit: z.number().int().min(1).max(30).default(12),
+  showContact: flagOn,
+  showSocial: flagOn,
+  /** Small line at the bottom right. Empty hides it. */
+  bottomLine: text(120, "Strategy · Story · Scale"),
 });
 
 export const analyticsSchema = z.object({
@@ -191,6 +240,8 @@ export const SETTING_SCHEMAS = {
   social: socialSchema,
   home: homeSchema,
   banners: bannersSchema,
+  header: headerSchema,
+  footer: footerSchema,
   analytics: analyticsSchema,
   seo: seoDefaultsSchema,
 } as const;
@@ -203,6 +254,8 @@ export type SiteSettings = {
   social: z.infer<typeof socialSchema>;
   home: z.infer<typeof homeSchema>;
   banners: z.infer<typeof bannersSchema>;
+  header: z.infer<typeof headerSchema>;
+  footer: z.infer<typeof footerSchema>;
   analytics: z.infer<typeof analyticsSchema>;
   seo: z.infer<typeof seoDefaultsSchema>;
 };

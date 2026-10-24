@@ -71,7 +71,7 @@ export default async function SeoPage({ searchParams }: { searchParams: Promise<
       <Card title="Redirects">
         <p className="mb-4 text-sm text-muted">Redirects are created automatically when a published URL changes. Changes take effect within about 30 seconds.</p>
         {canRedirects && (
-          <AdminForm action={saveRedirect} submitLabel="Save redirect" className="mb-6 grid items-end gap-4 md:grid-cols-[1fr_1fr_160px_auto]">
+          <AdminForm action={saveRedirect} submitLabel="Save redirect" className="mb-6 grid items-end gap-4 md:grid-cols-[1fr_1fr_160px_auto]" inline>
             <TextInput label="From path" name="fromPath" placeholder="/old-page" required />
             <TextInput label="To (path or https URL)" name="toPath" placeholder="/new-page" required />
             <SelectField label="Type" name="statusCode" defaultValue="301" options={[{ value: 301, label: "301 Permanent" }, { value: 302, label: "302 Temporary" }, { value: 307, label: "307 Temporary" }, { value: 308, label: "308 Permanent" }]} />

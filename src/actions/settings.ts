@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { AppError, fieldErrorsFrom, revalidateSite, run, type ActionResult } from "@/lib/action";
+import { assertEditLocks, lockKey } from "@/lib/edit-lock";
 import { requirePermission } from "@/lib/auth/session";
 import { audit } from "@/lib/audit";
 import { diffFields } from "@/lib/audit-format";
@@ -21,6 +22,7 @@ export async function saveSettings(_prev: unknown, fd: FormData): Promise<Action
     const group = String(fd.get("group")) as SettingGroup;
     if (!GROUPS.includes(group)) throw new AppError("Unknown settings group.");
     const user = await requirePermission(permissionFor(group));
+    await assertEditLocks(user, [lockKey.setting(group)], fd);
 
     const prev = await db.setting.findUnique({ where: { key: group } });
     // Start from what is stored, so a form that edits only part of a group (for example this Settings

@@ -1,8 +1,12 @@
 "use client";
 
-import { createContext, startTransition, useActionState, useContext, useId, useState } from "react";
+import Link from "next/link";
+import { createContext, startTransition, useActionState, useCallback, useContext, useEffect, useId, useRef, useState } from "react";
 import type { ActionResult } from "@/lib/action";
 import { Icon } from "@/components/ui/icons";
+import { useUnsavedGuard } from "@/components/admin/unsaved-changes";
+import { useEditLock, type LockUi } from "@/components/admin/use-edit-lock";
+import { cn } from "@/lib/utils";
 
 const ErrorsCtx = createContext<Record<string, string[]>>({});
 
@@ -11,68 +15,291 @@ export const inputClass =
 
 type Action = (prev: ActionResult<unknown> | null, formData: FormData) => Promise<ActionResult<unknown>>;
 
+/** A comparable string of everything the form would submit (files by name and size). */
+function serialize(form: HTMLFormElement | null): string {
+  if (!form) return "";
+  const parts: string[] = [];
+  for (const [k, v] of new FormData(form).entries()) parts.push(`${k}\u0001${typeof v === "string" ? v : `file:${v.name}:${v.size}`}`);
+  return parts.join("\u0002");
+}
+
+function LockBanner({ ui, onRequest }: { ui: LockUi; onRequest: () => void }) {
+  if (ui.status === "blocked") {
+    return (
+      <div role="alert" className="flex flex-wrap items-center gap-3 rounded-[var(--radius-field)] border border-bronze-300 bg-bronze-100/60 p-4 text-forest-900">
+        <Icon name="shield" size={20} className="shrink-0 text-bronze-700" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">{ui.message}</p>
+          <p className="mt-0.5 text-sm text-muted">The form is read-only. This page checks every few seconds and reloads for you as soon as the lock is released.</p>
+        </div>
+        {ui.requested ? (
+          <span className="text-sm font-semibold text-forest-800">Request sent to {ui.holder}</span>
+        ) : (
+          <button type="button" onClick={onRequest} className="min-h-10 rounded-lg border-2 border-forest-900 px-4 text-sm font-semibold text-forest-900 hover:bg-forest-900 hover:text-white">
+            Request access
+          </button>
+        )}
+      </div>
+    );
+  }
+  if (ui.status === "lost") {
+    return (
+      <div role="alert" className="flex flex-wrap items-center gap-3 rounded-[var(--radius-field)] border border-danger/40 bg-[#fbeceb] p-4 text-danger">
+        <Icon name="alert" size={20} className="shrink-0" />
+        <p className="min-w-0 flex-1 font-semibold">{ui.message} Saving is disabled so nobody&apos;s work is overwritten; copy anything you need, then reload.</p>
+        <button type="button" onClick={() => window.location.reload()} className="min-h-10 rounded-lg border-2 border-danger px-4 text-sm font-semibold hover:bg-danger hover:text-white">
+          Reload page
+        </button>
+      </div>
+    );
+  }
+  if (ui.status === "held" && ui.offline) {
+    return (
+      <p role="status" className="flex items-center gap-2 rounded-[var(--radius-field)] border border-bronze-300 bg-bronze-100/60 p-3.5 text-sm font-medium text-forest-900">
+        <Icon name="alert" size={18} className="text-bronze-700" /> Connection lost. We keep trying to hold your editing lock; save as soon as you are back online.
+      </p>
+    );
+  }
+  if (ui.status === "held" && ui.requests.length > 0) {
+    return (
+      <p role="status" className="flex items-center gap-2 rounded-[var(--radius-field)] border border-bronze-300 bg-bronze-100/60 p-3.5 text-sm font-medium text-forest-900">
+        <Icon name="users" size={18} className="text-bronze-700" /> {ui.requests.join(", ")} {ui.requests.length === 1 ? "is" : "are"} waiting to edit this page. Please save and leave when you are done.
+      </p>
+    );
+  }
+  return null;
+}
+
 export function AdminForm({
   action,
   children,
   submitLabel = "Save changes",
   className,
   footer,
+  lock,
+  inline,
+  cancelHref,
 }: {
   action: Action;
   children: React.ReactNode;
   submitLabel?: string;
   className?: string;
   footer?: React.ReactNode;
+  /** Resource keys (see src/lib/edit-lock.ts) held exclusively while this form is open. The server re-checks them on save. */
+  lock?: string[];
+  /** Small utility forms (login, add note ...): no sticky bar and no unsaved-changes guard. */
+  inline?: boolean;
+  /** Adds a Cancel link back to a list. It goes through the unsaved-changes guard like every other link. */
+  cancelHref?: string;
 }) {
-  const [state, dispatch, pending] = useActionState(action, null);
+  // A network failure or crashed request must never unmount the form (that would throw the edits away): it becomes an ordinary "not saved" result.
+  const safeAction = useCallback<Action>(
+    async (prev, data) => {
+      try {
+        return await action(prev, data);
+      } catch (err) {
+        if (err && typeof err === "object" && "digest" in err) throw err; // Next's own redirect / not-found signals
+        return { ok: false, error: "Could not reach the server, so nothing was saved. Your changes are still here; check your connection and try again." };
+      }
+    },
+    [action],
+  );
+  const [state, dispatch, pending] = useActionState(safeAction, null);
   const errors = state && !state.ok ? (state.fieldErrors ?? {}) : {};
+  const formRef = useRef<HTMLFormElement>(null);
+  const guard = useUnsavedGuard();
+  const guardId = useId();
+  const lockApi = useEditLock(lock ?? []);
+  const tracked = !inline && guard !== null;
+  const [dirty, setDirty] = useState(false);
+  const baseline = useRef<string | null>(null);
+  const interacted = useRef(false);
+  const waiter = useRef<((ok: boolean) => void) | null>(null);
+  const submitting = useRef(false);
+
+  const isDirty = useCallback(() => baseline.current !== null && serialize(formRef.current) !== baseline.current, []);
+  const check = useCallback(() => {
+    const d = isDirty();
+    setDirty((prev) => (prev === d ? prev : d));
+  }, [isDirty]);
+
+  // Baseline = what the form holds once it has settled after hydration (unless the user already started typing).
+  useEffect(() => {
+    if (!tracked) return;
+    const snap = () => {
+      if (!interacted.current) baseline.current = serialize(formRef.current);
+    };
+    const t1 = setTimeout(snap, 0);
+    const t2 = setTimeout(snap, 500);
+    const poll = setInterval(check, 500); // also catches hidden inputs driven by React state (media picker, block editor ...)
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearInterval(poll);
+    };
+  }, [tracked, check]);
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (!tracked || !form) return;
+    const onEdit = () => {
+      interacted.current = true;
+      check();
+    };
+    const onClick = () => setTimeout(check, 60);
+    form.addEventListener("input", onEdit);
+    form.addEventListener("change", onEdit);
+    form.addEventListener("click", onClick);
+    return () => {
+      form.removeEventListener("input", onEdit);
+      form.removeEventListener("change", onEdit);
+      form.removeEventListener("click", onClick);
+    };
+  }, [tracked, check]);
+
+  const locked = lockApi.locked;
+
+  const save = useCallback(
+    () =>
+      new Promise<boolean>((resolve) => {
+        const form = formRef.current;
+        if (!form || locked) return resolve(false);
+        if (!form.checkValidity()) {
+          setTimeout(() => form.reportValidity(), 80);
+          return resolve(false);
+        }
+        waiter.current = resolve;
+        form.requestSubmit();
+      }),
+    [locked],
+  );
+
+  useEffect(() => {
+    if (!tracked || !guard) return;
+    return guard.register(guardId, { isDirty, save });
+  }, [tracked, guard, guardId, isDirty, save]);
+
+  useEffect(() => {
+    if (tracked) guard?.notifyDirty(guardId, dirty);
+  }, [tracked, guard, guardId, dirty]);
+
+  // A finished save: success makes the saved values the new baseline; failure keeps the edits and shows what is wrong.
+  useEffect(() => {
+    if (!state) return;
+    submitting.current = false;
+    waiter.current?.(state.ok);
+    waiter.current = null;
+    if (state.ok) {
+      const t = setTimeout(() => {
+        baseline.current = serialize(formRef.current);
+        setDirty(false);
+      }, 0);
+      return () => clearTimeout(t);
+    }
+    formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [state]);
+
+  const bar = (
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-x-4 gap-y-2 border-line",
+        inline ? "border-t pt-5" : "sticky bottom-0 z-30 mt-8 rounded-[var(--radius-card)] border bg-white/95 px-4 py-3 shadow-[0_-8px_24px_-12px_rgba(15,41,31,0.35)] backdrop-blur supports-[backdrop-filter]:bg-white/85",
+      )}
+    >
+      {!inline && (
+        <p aria-live="polite" className="min-w-0 flex-1 basis-40 text-sm font-medium">
+          {pending ? (
+            <span className="text-muted">Saving…</span>
+          ) : locked ? (
+            <span className="text-bronze-700">Editing is locked</span>
+          ) : state && !state.ok ? (
+            <span className="text-danger">Not saved: {state.error}</span>
+          ) : dirty ? (
+            <span className="inline-flex items-center gap-2 text-bronze-700">
+              <span className="size-2 rounded-full bg-bronze-500" aria-hidden="true" /> Unsaved changes
+            </span>
+          ) : state?.ok ? (
+            <span className="inline-flex items-center gap-1.5 text-forest-800">
+              <Icon name="check" size={16} /> {state.message ?? "Saved"}
+            </span>
+          ) : null}
+        </p>
+      )}
+      <div className={cn("flex flex-wrap items-center gap-3", !inline && "ml-auto")}>
+        {cancelHref && (
+          <Link href={cancelHref} className="inline-flex min-h-11 items-center rounded-[var(--radius-field)] px-4 font-semibold text-forest-900 hover:bg-forest-50">
+            Cancel
+          </Link>
+        )}
+        {footer}
+        <button
+          type="submit"
+          disabled={pending || locked}
+          aria-busy={pending}
+          className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-field)] bg-forest-900 px-6 font-semibold text-white transition hover:bg-forest-800 disabled:opacity-60"
+        >
+          {pending && <span className="spinner" aria-hidden="true" />}
+          {pending ? "Saving…" : submitLabel}
+        </button>
+      </div>
+    </div>
+  );
+
+  const body = (
+    <>
+      <div aria-live="polite">
+        {state?.ok && state.message && (
+          <p role="status" className="flex items-center gap-2 rounded-[var(--radius-field)] bg-forest-50 p-3.5 font-medium text-forest-800">
+            <Icon name="check" size={18} /> {state.message}
+          </p>
+        )}
+        {state && !state.ok && (
+          <div role="alert" className="rounded-[var(--radius-field)] bg-[#fbeceb] p-3.5 text-danger">
+            <p className="flex items-center gap-2 font-semibold">
+              <Icon name="alert" size={18} /> {state.error}
+            </p>
+            {Object.keys(errors).length > 0 && (
+              <ul className="mt-1.5 list-disc pl-9 text-sm">
+                {Object.entries(errors).map(([k, v]) => (
+                  <li key={k}>
+                    <span className="font-semibold">{k}:</span> {v.join(", ")}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+      {children}
+      {bar}
+    </>
+  );
+
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (submitting.current || pending || locked) return; // no double submits, no saving behind someone else's lock
+    submitting.current = true;
+    const data = new FormData(e.currentTarget);
+    if (lock?.length) data.set("_lockToken", lockApi.token);
+    startTransition(() => dispatch(data));
+  };
+
   return (
     <ErrorsCtx.Provider value={errors}>
-      <form
-        className={className ?? "space-y-6"}
-        onSubmit={(e) => {
-          e.preventDefault();
-          const data = new FormData(e.currentTarget);
-          startTransition(() => dispatch(data));
-        }}
-      >
-        <div aria-live="polite">
-          {state?.ok && state.message && (
-            <p role="status" className="flex items-center gap-2 rounded-[var(--radius-field)] bg-forest-50 p-3.5 font-medium text-forest-800">
-              <Icon name="check" size={18} /> {state.message}
-            </p>
-          )}
-          {state && !state.ok && (
-            <div role="alert" className="rounded-[var(--radius-field)] bg-[#fbeceb] p-3.5 text-danger">
-              <p className="flex items-center gap-2 font-semibold">
-                <Icon name="alert" size={18} /> {state.error}
-              </p>
-              {Object.keys(errors).length > 0 && (
-                <ul className="mt-1.5 list-disc pl-9 text-sm">
-                  {Object.entries(errors).map(([k, v]) => (
-                    <li key={k}>
-                      <span className="font-semibold">{k}:</span> {v.join(", ")}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-        </div>
-        {children}
-        <div className="flex flex-wrap items-center gap-3 border-t border-line pt-5">
-          <button
-            type="submit"
-            disabled={pending}
-            aria-busy={pending}
-            className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-field)] bg-forest-900 px-6 font-semibold text-white transition hover:bg-forest-800 disabled:opacity-60"
-          >
-            {pending && <span className="spinner" aria-hidden="true" />}
-            {pending ? "Saving…" : submitLabel}
-          </button>
-          {footer}
-        </div>
-      </form>
+      {lock?.length ? (
+        <form ref={formRef} className="contents" onSubmit={onSubmit}>
+          <div className={lockApi.ui.status === "held" && lockApi.ui.requests.length === 0 && !lockApi.ui.offline ? undefined : "mb-6"}>
+            <LockBanner ui={lockApi.ui} onRequest={lockApi.requestAccess} />
+          </div>
+          <fieldset disabled={locked} className={cn(className ?? "space-y-6", "min-w-0")}>
+            {body}
+          </fieldset>
+        </form>
+      ) : (
+        <form ref={formRef} className={className ?? "space-y-6"} onSubmit={onSubmit}>
+          {body}
+        </form>
+      )}
     </ErrorsCtx.Provider>
   );
 }

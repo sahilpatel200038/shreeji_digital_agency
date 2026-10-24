@@ -39,3 +39,19 @@ _Added 2026-10-17. Builds on the existing About / Pages / Services editors; no p
 ## Tests
 
 `tests/unit/page-content.test.ts`, `tests/e2e/page-management.spec.ts` (coverage of all routes vs admin screens, Home, Contact, each of the 15 services, FAQs, section switches, images, validation, access control). `tests/e2e/admin.spec.ts` now also checks that editors are blocked from the two new screens.
+
+## Update 2026-10-22: header, footer, team, locks and guards
+
+| Public element | Admin screen | Stored in |
+|---|---|---|
+| Header: logo, brand text, navigation, call-to-action button | **Header Management** (`/admin/header`) | Setting `header` + Menu `header` |
+| Footer: logo, description, tagline, copyright, services column, company/legal links, contact, social, bottom line | **Footer Management** (`/admin/footer`) | Settings `footer`, `general`, `contact`, `social` + Menus `footer-company`, `footer-legal` |
+| About page team (members, photos, order, show/hide, section heading) | **Team** (`/admin/team`); the About page editor links to it | `TeamMember`, Setting `banners` (`teamEyebrow`, `teamTitle`) |
+| Section headings of /services, /blog, /faq and CMS pages | Settings, Page banners | Setting `banners` |
+| Main services (homepage slider, top of /services, footer) | Services, tick **Main service** | `Service.isFeatured` |
+
+Every editor now has a sticky Save bar, the unsaved-changes dialog (`UnsavedChangesProvider`) and, for pages and modules, an exclusive editing lock (`AdminForm lock={[...]}`), enforced again on the server by every save and delete action. Menus for the header and footer are edited only in Header/Footer Management; the Menus screen points there.
+
+**Team: what was found.** Saving a team member's name, role, photo, status and the section heading all persisted and appeared on `/about` in a production build (verified in a browser). The problems were structural: the About page editor gave no hint that the team lives elsewhere, new members were created with order 0 and so jumped to the front, order could only be changed by typing numbers (duplicates made it ambiguous), and the section heading was only editable deep inside Settings. All four are fixed (see the table above, "Move up/down", default order after the last member, and a pointer from the About editor).
+
+**Hard-coded wording made editable.** Services page headings, FAQ and Blog banner labels and call-to-action band, the services heading on CMS pages, and the contact "Opening hours" label. Deliberately left in code: the 404 page and the structural labels of the admin itself.

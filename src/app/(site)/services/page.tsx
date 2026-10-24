@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { listingSeo } from "@/lib/seo/listing";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { CORE_SERVICE_SLUGS } from "@/lib/core-services";
 import { getBannerMedia, getCoreServices, getServicesGrouped } from "@/lib/data/public";
 import { getSettings } from "@/lib/settings/get";
 import { resolveBanner } from "@/lib/banner";
@@ -26,13 +25,12 @@ export default async function ServicesPage() {
   const [groups, core, settings] = await Promise.all([getServicesGrouped(), getCoreServices(), getSettings()]);
   const banner = await getBannerMedia(settings.banners.services);
   const all = groups.flatMap((g) => g.services);
-  const coreSlugs = new Set<string>(CORE_SERVICE_SLUGS);
-  const others = all.filter((s) => !coreSlugs.has(s.slug));
+  const others = all.filter((s) => !s.isFeatured);
   return (
     <>
       <JsonLd data={itemListSchema(all.map((s) => ({ name: s.title, path: `/services/${s.slug}` })))} />
       <PageHero
-        eyebrow="Our services"
+        eyebrow={settings.banners.servicesEyebrow}
         title={settings.banners.servicesTitle}
         intro={settings.banners.servicesText}
         image={resolveBanner("services", banner)}
@@ -41,7 +39,7 @@ export default async function ServicesPage() {
         {all.length === 0 && <EmptyState title="Services are coming soon" text="Please check back shortly or contact us directly." />}
         {core.length > 0 && (
           <>
-            <SectionHeading id="core-title" eyebrow="What we do" title="Our Core Services" />
+            <SectionHeading id="core-title" eyebrow={settings.banners.servicesCoreEyebrow} title={settings.banners.servicesCoreTitle} />
             <Stagger className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {core.map((s) => (
                 <StaggerItem key={s.id}>
@@ -54,7 +52,7 @@ export default async function ServicesPage() {
       </Section>
       {others.length > 0 && (
         <Section tone="white" labelledBy="more-title">
-          <SectionHeading id="more-title" eyebrow="Also available" title="More ways we can help" />
+          <SectionHeading id="more-title" eyebrow={settings.banners.servicesMoreEyebrow} title={settings.banners.servicesMoreTitle} />
           <Stagger className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {others.map((s) => (
               <StaggerItem key={s.id}>

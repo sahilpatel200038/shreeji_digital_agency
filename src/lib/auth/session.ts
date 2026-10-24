@@ -93,4 +93,6 @@ export async function requirePagePermission(permission: Permission): Promise<Ses
 
 export async function revokeUserSessions(userId: number) {
   await db.session.deleteMany({ where: { userId } });
+  // A user who is signed out (role change, deactivation) must not keep other administrators locked out.
+  await db.editLock.deleteMany({ where: { userId } });
 }

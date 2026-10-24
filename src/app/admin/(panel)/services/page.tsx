@@ -6,7 +6,6 @@ import { Empty, Flash, LinkButton, PageHeader, StatusBadge, TableWrap, td, th } 
 import { ConfirmButton } from "@/components/admin/confirm-button";
 import { deleteService, moveService, setServiceStatus } from "@/actions/services";
 import { Icon } from "@/components/ui/icons";
-import { CORE_SERVICE_SLUGS } from "@/lib/core-services";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +13,10 @@ export default async function ServicesList({ searchParams }: { searchParams: Pro
   const user = await requireUser();
   const sp = await searchParams;
   const items = await db.service.findMany({ orderBy: [{ sortOrder: "asc" }, { id: "asc" }], include: { category: true, seo: { select: { title: true, description: true } } } });
-  const core = new Set<string>(CORE_SERVICE_SLUGS);
   const canDelete = can(user.role, "content:delete");
   return (
     <>
-      <PageHeader title="Services" description="Each published service gets its own page at /services/…. Main services are the eight shown on the homepage and Services page; the others are listed under “More ways we can help”." actions={<LinkButton href="/admin/services/new">Add service</LinkButton>} />
+      <PageHeader title="Services" description="Each published service gets its own page at /services/…. Main services (tick “Main service” in the editor) are shown on the homepage, the top of the Services page and the footer; the others are listed under “More ways we can help”." actions={<LinkButton href="/admin/services/new">Add service</LinkButton>} />
       <Flash params={sp} />
       <TableWrap>
         <table className="w-full min-w-[900px]">
@@ -54,7 +52,7 @@ export default async function ServicesList({ searchParams }: { searchParams: Pro
                   <Link href={`/admin/services/${s.id}`} className="font-semibold text-forest-900 hover:text-bronze-700">{s.title}</Link>
                   <span className="block text-sm text-muted">/services/{s.slug}</span>
                 </td>
-                <td className={td}>{core.has(s.slug) ? <span className="font-semibold text-forest-900">Main</span> : <span className="text-muted">Additional</span>}</td>
+                <td className={td}>{s.isFeatured ? <span className="font-semibold text-forest-900">Main</span> : <span className="text-muted">Additional</span>}</td>
                 <td className={`${td} text-muted`}>{s.category.name}</td>
                 <td className={td}>{s.seo?.title && s.seo?.description ? <span className="text-forest-800">Set</span> : <span className="text-muted" title="Uses the service title and summary">Default</span>}</td>
                 <td className={td}><StatusBadge status={s.status} /></td>

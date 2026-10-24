@@ -454,27 +454,27 @@ test.describe("media library", () => {
 test.describe("menus, settings, testimonials, redirects", () => {
   test.use({ storageState: AUTH_FILE });
 
-  test("menu: add a header item, see it live, then remove it", async ({ page, request }) => {
-    await page.goto("/admin/menus?menu=header");
+  test("Header Management: add a navigation item, see it live, then remove it", async ({ page, request }) => {
+    await page.goto("/admin/header");
     await page.getByRole("button", { name: "Add item" }).click();
     const items = page.locator("ol > li");
     const last = items.last();
     await last.getByLabel("Label").fill("E2E Link");
     await last.getByLabel(/^Link/).fill("/faq");
-    await page.getByRole("button", { name: "Save menu" }).click();
-    await expect(page.getByRole("status")).toContainText("Menu saved");
+    await page.getByRole("button", { name: "Save header" }).click();
+    await expect(page.getByRole("status").first()).toContainText("Header saved");
     await expect.poll(async () => (await (await request.get("/")).text()).includes("E2E Link"), { timeout: 15_000 }).toBe(true);
 
     // invalid links are rejected
-    await page.goto("/admin/menus?menu=header");
+    await page.goto("/admin/header");
     await page.locator("ol > li").last().getByLabel(/^Link/).fill("javascript:alert(1)");
-    await page.getByRole("button", { name: "Save menu" }).click();
-    await expect(alertOf(page)).toContainText(/Use \/path/);
+    await page.getByRole("button", { name: "Save header" }).click();
+    await expect(alertOf(page).first()).toContainText(/Use \/path/);
 
-    await page.goto("/admin/menus?menu=header");
+    await page.goto("/admin/header");
     await page.locator("ol > li").last().getByRole("button", { name: /Remove/ }).click();
-    await page.getByRole("button", { name: "Save menu" }).click();
-    await expect(page.getByRole("status")).toContainText("Menu saved");
+    await page.getByRole("button", { name: "Save header" }).click();
+    await expect(page.getByRole("status").first()).toContainText("Header saved");
     await expect.poll(async () => (await (await request.get("/")).text()).includes("E2E Link"), { timeout: 15_000 }).toBe(false);
   });
 

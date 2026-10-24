@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { AppError, fieldErrorsFrom, revalidateSite, run, type ActionResult } from "@/lib/action";
+import { assertEditLocks, assertNotLockedByOthers, lockKey } from "@/lib/edit-lock";
 import { requirePermission } from "@/lib/auth/session";
 import { audit } from "@/lib/audit";
 import { diffFields } from "@/lib/audit-format";
@@ -25,6 +26,7 @@ export async function savePost(_prev: unknown, fd: FormData): Promise<ActionResu
   return run(async () => {
     const user = await requirePermission("content:write");
     const id = Number(fd.get("id")) || 0;
+    if (id) await assertEditLocks(user, [lockKey.post(id)], fd);
     const media = Number(fd.get("featuredMediaId"));
     const cat = Number(fd.get("categoryId"));
     const parsed = postSchema.safeParse({
@@ -87,6 +89,7 @@ export async function deletePost(fd: FormData): Promise<void> {
   await flashOnError("/admin/posts", async () => {
     const user = await requirePermission("content:delete");
     const id = Number(fd.get("id"));
+    await assertNotLockedByOthers(user, [lockKey.post(id)]);
     const post = await db.post.findUnique({ where: { id } });
     if (!post) throw new AppError("That post no longer exists.");
     await db.$transaction(async (tx) => {
@@ -103,6 +106,7 @@ export async function setPostStatus(fd: FormData): Promise<void> {
   await flashOnError("/admin/posts", async () => {
     const user = await requirePermission("content:write");
     const id = Number(fd.get("id"));
+    await assertNotLockedByOthers(user, [lockKey.post(id)]);
     const status = fd.get("status") === "PUBLISHED" ? "PUBLISHED" : "DRAFT";
     const post = await db.post.findUnique({ where: { id } });
     if (!post) throw new AppError("That post no longer exists.");

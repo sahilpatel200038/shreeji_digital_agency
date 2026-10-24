@@ -10,6 +10,7 @@ import { scoreSeo } from "@/lib/seo/score";
 import { siteUrl } from "@/lib/env";
 import { db } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma/client";
+import { lockKey } from "@/lib/lock-keys";
 
 type PostFull = Prisma.PostGetPayload<{ include: { seo: true; tags: { include: { tag: true } }; author: { select: { name: true } } } }>;
 
@@ -35,7 +36,7 @@ export async function PostEditor({ post }: { post: PostFull | null }) {
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
-      <AdminForm action={savePost} submitLabel={post ? "Save post" : "Create post"} className="space-y-6 xl:col-span-2">
+      <AdminForm action={savePost} submitLabel={post ? "Save post" : "Create post"} className="space-y-6 xl:col-span-2" lock={post ? [lockKey.post(post.id)] : undefined} cancelHref="/admin/posts">
         {post && <input type="hidden" name="id" value={post.id} />}
         <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
           <div className="space-y-6">
@@ -76,7 +77,7 @@ export async function PostEditor({ post }: { post: PostFull | null }) {
       </AdminForm>
       <div className="xl:col-span-2">
         <Card title="Add a category">
-          <AdminForm action={createPostCategory} submitLabel="Add category" className="flex flex-wrap items-end gap-3">
+          <AdminForm action={createPostCategory} submitLabel="Add category" className="flex flex-wrap items-end gap-3" inline>
             <TextInput label="Category name" name="name" maxLength={100} className="min-w-64" />
           </AdminForm>
         </Card>

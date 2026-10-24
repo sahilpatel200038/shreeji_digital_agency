@@ -31,7 +31,7 @@ export default async function FaqPage() {
   return (
     <>
       {faqs.length > 0 && <JsonLd data={faqSchema(faqs.map((f) => ({ question: f.question, answer: f.answer })))} />}
-      <PageHero eyebrow="FAQ" title={settings.banners.faqTitle} intro={settings.banners.faqText} image={resolveBanner("faq", banner)} />
+      <PageHero eyebrow={settings.banners.faqEyebrow} title={settings.banners.faqTitle} intro={settings.banners.faqText} image={resolveBanner("faq", banner)} />
       <Section>
         <div className="space-y-12">
           {faqs.length === 0 && <EmptyState title="No questions yet" text="Contact us and we will be happy to help." />}
@@ -43,8 +43,8 @@ export default async function FaqPage() {
           ))}
         </div>
       </Section>
-      <CtaBand title="Still have a question?" text="Send us a message and we will reply with a clear answer." label="Contact us" />
-      <ServicesSliderSection id="services-slider" title="Explore our services" />
+      <CtaBand title={settings.banners.faqCtaTitle} text={settings.banners.faqCtaText} label={settings.banners.faqCtaLabel} />
+      <ServicesSliderSection id="services-slider" title={settings.banners.faqServicesTitle} />
     </>
   );
 }

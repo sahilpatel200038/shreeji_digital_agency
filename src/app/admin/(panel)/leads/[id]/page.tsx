@@ -37,7 +37,7 @@ export default async function LeadDetail({ params, searchParams }: { params: Pro
             <p className="mt-5 whitespace-pre-wrap rounded-lg bg-paper p-4">{lead.message}</p>
           </Card>
           <Card title="Internal notes">
-            <AdminForm action={addLeadNote} submitLabel="Add note" className="space-y-3">
+            <AdminForm action={addLeadNote} submitLabel="Add note" className="space-y-3" inline>
               <input type="hidden" name="leadId" value={lead.id} />
               <TextArea label="Note" name="body" rows={3} maxLength={2000} />
             </AdminForm>

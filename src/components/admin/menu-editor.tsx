@@ -4,13 +4,17 @@ import { useState } from "react";
 import { AdminForm, inputClass } from "@/components/admin/admin-form";
 import { saveMenu } from "@/actions/menus";
 import { Icon } from "@/components/ui/icons";
+import { lockKey } from "@/lib/lock-keys";
 
 type Item = { key: string; parentKey: string | null; label: string; href: string; openInNewTab: boolean; isActive: boolean };
 
 let counter = 0;
 const newKey = () => `n${Date.now().toString(36)}${counter++}`;
 
-export function MenuEditor({ menuId, initial }: { menuId: number; initial: Item[] }) {
+export type MenuEditorItem = Item;
+
+/** A menu's items as a self-contained field: it submits itself as JSON in a hidden input called `name`. */
+export function MenuItemsField({ name, initial }: { name: string; initial: Item[] }) {
   const [items, setItems] = useState<Item[]>(initial);
   const set = (i: number, patch: Partial<Item>) => setItems((xs) => xs.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
   const move = (i: number, d: -1 | 1) =>
@@ -30,9 +34,8 @@ export function MenuEditor({ menuId, initial }: { menuId: number; initial: Item[
   const parents = items.filter((x) => !x.parentKey);
 
   return (
-    <AdminForm action={saveMenu} submitLabel="Save menu">
-      <input type="hidden" name="menuId" value={menuId} />
-      <input type="hidden" name="items" value={JSON.stringify(items)} />
+    <div className="space-y-3">
+      <input type="hidden" name={name} value={JSON.stringify(items)} />
       {items.length === 0 && <p className="rounded-lg border border-dashed border-forest-900/25 p-6 text-center text-muted">This menu is empty.</p>}
       <ol className="space-y-3">
         {items.map((it, i) => (
@@ -77,6 +80,15 @@ export function MenuEditor({ menuId, initial }: { menuId: number; initial: Item[
       <button type="button" onClick={() => setItems((xs) => [...xs, { key: newKey(), parentKey: null, label: "", href: "/", openInNewTab: false, isActive: true }])} className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-field)] border-2 border-forest-900 px-5 font-semibold text-forest-900 hover:bg-forest-900 hover:text-white">
         <Icon name="plus" size={18} /> Add item
       </button>
+    </div>
+  );
+}
+
+export function MenuEditor({ menuId, menuKey, initial }: { menuId: number; menuKey: string; initial: Item[] }) {
+  return (
+    <AdminForm action={saveMenu} submitLabel="Save menu" lock={[lockKey.menu(menuKey)]}>
+      <input type="hidden" name="menuId" value={menuId} />
+      <MenuItemsField name="items" initial={initial} />
     </AdminForm>
   );
 }

@@ -4,6 +4,7 @@ import { Card } from "@/components/admin/ui";
 import { saveFaq, saveProject, saveTestimonial } from "@/actions/content";
 import { saveTeamMember } from "@/actions/team";
 import type { Faq, Project, TeamMember, Testimonial } from "@/generated/prisma/client";
+import { lockKey } from "@/lib/lock-keys";
 
 const STATUS = [
   { value: "PUBLISHED", label: "Published" },
@@ -12,7 +13,7 @@ const STATUS = [
 
 export function ProjectEditor({ project }: { project: Project | null }) {
   return (
-    <AdminForm action={saveProject} submitLabel={project ? "Save project" : "Create project"}>
+    <AdminForm action={saveProject} submitLabel={project ? "Save project" : "Create project"} lock={project ? [lockKey.project(project.id)] : undefined} cancelHref="/admin/projects">
       {project && <input type="hidden" name="id" value={project.id} />}
       <Card>
         <div className="grid gap-4 md:grid-cols-2">
@@ -34,7 +35,7 @@ export function ProjectEditor({ project }: { project: Project | null }) {
 
 export function TestimonialEditor({ t }: { t: Testimonial | null }) {
   return (
-    <AdminForm action={saveTestimonial} submitLabel={t ? "Save testimonial" : "Create testimonial"}>
+    <AdminForm action={saveTestimonial} submitLabel={t ? "Save testimonial" : "Create testimonial"} lock={t ? [lockKey.testimonial(t.id)] : undefined} cancelHref="/admin/testimonials">
       {t && <input type="hidden" name="id" value={t.id} />}
       <Card>
         <div className="grid gap-4 md:grid-cols-2">
@@ -55,7 +56,7 @@ export function TestimonialEditor({ t }: { t: Testimonial | null }) {
 
 export function FaqEditor({ f }: { f: Faq | null }) {
   return (
-    <AdminForm action={saveFaq} submitLabel={f ? "Save FAQ" : "Create FAQ"}>
+    <AdminForm action={saveFaq} submitLabel={f ? "Save FAQ" : "Create FAQ"} lock={f ? [lockKey.faq(f.id)] : undefined} cancelHref="/admin/faqs">
       {f && <input type="hidden" name="id" value={f.id} />}
       <Card>
         <div className="grid gap-4 md:grid-cols-2">
@@ -71,9 +72,9 @@ export function FaqEditor({ f }: { f: Faq | null }) {
   );
 }
 
-export function TeamEditor({ member }: { member: TeamMember | null }) {
+export function TeamEditor({ member, nextOrder = 1 }: { member: TeamMember | null; nextOrder?: number }) {
   return (
-    <AdminForm action={saveTeamMember} submitLabel={member ? "Save team member" : "Add team member"}>
+    <AdminForm action={saveTeamMember} submitLabel={member ? "Save team member" : "Add team member"} lock={member ? [lockKey.team(member.id)] : undefined} cancelHref="/admin/team">
       {member && <input type="hidden" name="id" value={member.id} />}
       <Card>
         <div className="grid gap-4 md:grid-cols-2">
@@ -81,7 +82,7 @@ export function TeamEditor({ member }: { member: TeamMember | null }) {
           <TextInput label="Role" name="role" defaultValue={member?.role} required maxLength={120} hint="Short designation, e.g. CEO." />
           <TextInput label="Full title (optional)" name="title" defaultValue={member?.title} maxLength={160} hint="Shown under the role, e.g. Chief Executive Officer." className="md:col-span-2" />
           <SelectField label="Status" name="status" defaultValue={member?.status ?? "PUBLISHED"} options={STATUS} />
-          <TextInput label="Display order" name="sortOrder" type="number" min={0} max={9999} defaultValue={member?.sortOrder ?? 0} />
+          <TextInput label="Display order" name="sortOrder" type="number" min={0} max={9999} defaultValue={member?.sortOrder ?? nextOrder} hint="Lower numbers appear first. You can also reorder from the Team list." />
           <div className="md:col-span-2">
             <MediaPicker name="photoId" label="Photo" defaultId={member?.photoId} hint="Use only an approved photograph of this person. Without one, a neutral placeholder is shown." />
           </div>

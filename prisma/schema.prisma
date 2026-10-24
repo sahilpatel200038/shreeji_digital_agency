@@ -188,6 +188,8 @@ model Service {
   status          PublishStatus @default(DRAFT)
   publishedAt     DateTime?
   sortOrder       Int           @default(0)
+  /// "Main" service: shown in the homepage slider, the top of /services and the footer. Others are listed under "More ways we can help".
+  isFeatured      Boolean       @default(false)
   seoId           Int?          @unique
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -200,6 +202,7 @@ model Service {
   relatedBy     ServiceRelation[] @relation("ServiceRelationTo")
 
   @@index([status, sortOrder])
+  @@index([isFeatured, sortOrder])
   @@index([categoryId])
   @@index([featuredMediaId])
 }
@@ -456,4 +459,29 @@ model RateLimit {
   key         String   @id @db.VarChar(190)
   count       Int      @default(0)
   windowStart DateTime
+}
+
+/// Exclusive, time-limited editing lease on one admin resource (e.g. "service:5", "setting:home"). See src/lib/edit-lock.ts.
+model EditLock {
+  resourceKey String   @id @db.VarChar(120)
+  userId      Int
+  userName    String   @db.VarChar(120)
+  /// Random id of the browser tab that holds the lock, so the same admin in two tabs is also kept apart.
+  token       String   @db.VarChar(64)
+  acquiredAt  DateTime @default(now())
+  heartbeatAt DateTime
+  expiresAt   DateTime
+
+  @@index([expiresAt])
+  @@index([userId])
+}
+
+/// "Please let me edit this" notes left for the current holder of an EditLock.
+model EditLockRequest {
+  resourceKey   String   @db.VarChar(120)
+  requesterId   Int
+  requesterName String   @db.VarChar(120)
+  createdAt     DateTime @default(now())
+
+  @@id([resourceKey, requesterId])
 }

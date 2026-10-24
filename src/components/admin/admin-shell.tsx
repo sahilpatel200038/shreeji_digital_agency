@@ -3,13 +3,27 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { Icon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
+import { UnsavedChangesProvider, useUnsavedGuard } from "@/components/admin/unsaved-changes";
 
 export type AdminNavItem = { href: string; label: string; icon: string };
 
-export function AdminShell({
+export function AdminShell(props: {
+  nav: AdminNavItem[];
+  user: { name: string; role: string };
+  logout: () => Promise<void>;
+  children: React.ReactNode;
+}) {
+  return (
+    <UnsavedChangesProvider>
+      <ShellInner {...props} />
+    </UnsavedChangesProvider>
+  );
+}
+
+function ShellInner({
   nav,
   user,
   logout,
@@ -21,6 +35,7 @@ export function AdminShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const guard = useUnsavedGuard();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -70,11 +85,15 @@ export function AdminShell({
           <Link href="/" target="_blank" className="flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/20 text-sm text-white hover:bg-white/10">
             <Icon name="eye" size={16} /> View site
           </Link>
-          <form action={logout}>
-            <button className="flex min-h-10 items-center gap-1.5 rounded-lg border border-white/20 px-3 text-sm text-white hover:bg-white/10" aria-label="Sign out">
-              <Icon name="logout" size={16} /> Sign out
-            </button>
-          </form>
+          {/* Signing out leaves the page, so it asks first when there are unsaved changes. */}
+          <button
+            type="button"
+            onClick={() => (guard ? guard.confirmLeave(() => startTransition(() => void logout())) : startTransition(() => void logout()))}
+            className="flex min-h-10 items-center gap-1.5 rounded-lg border border-white/20 px-3 text-sm text-white hover:bg-white/10"
+            aria-label="Sign out"
+          >
+            <Icon name="logout" size={16} /> Sign out
+          </button>
         </div>
       </div>
     </nav>

@@ -9,6 +9,7 @@ import { parseBlocks } from "@/lib/blocks/schema";
 import { scoreSeo } from "@/lib/seo/score";
 import { siteUrl } from "@/lib/env";
 import type { Prisma } from "@/generated/prisma/client";
+import { lockKey } from "@/lib/lock-keys";
 
 type PageWithSeo = Prisma.PageGetPayload<{ include: { seo: true } }>;
 
@@ -32,7 +33,7 @@ export function PageEditor({ page }: { page: PageWithSeo | null }) {
     : null;
 
   return (
-    <AdminForm action={savePage} submitLabel={page ? "Save page" : "Create page"}>
+    <AdminForm action={savePage} submitLabel={page ? "Save page" : "Create page"} lock={page ? [lockKey.page(page.id)] : undefined} cancelHref="/admin/pages">
       {page && <input type="hidden" name="id" value={page.id} />}
       <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
         <div className="space-y-6">

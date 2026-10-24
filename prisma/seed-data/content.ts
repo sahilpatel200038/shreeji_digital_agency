@@ -256,7 +256,7 @@ export const POSTS: SeedPost[] = [
       p("Real client work, real testimonials with permission and clear contact details build trust. Avoid claims you cannot support."),
       h2("Always offer a next step"),
       p("Every page should point to a clear action, such as a contact form, a call or a booking link."),
-      p("Looking for a new site? See our [web and app development](/services/web-app-development) service."),
+      p("Looking for a new site? See our [web and app development](/services/web-development-design) service."),
     ],
   },
 ];

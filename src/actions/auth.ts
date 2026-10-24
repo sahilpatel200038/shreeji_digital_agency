@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { releaseAllFor } from "@/lib/edit-lock";
 import { db } from "@/lib/db";
 import { AppError, run, type ActionResult } from "@/lib/action";
 import { verifyPassword } from "@/lib/auth/password";
@@ -51,6 +52,9 @@ export async function login(_prev: unknown, formData: FormData): Promise<ActionR
 export async function logout(): Promise<void> {
   const user = await getSession();
   await destroySession();
-  if (user) await audit(user.id, "logout", "user", user.id, "Signed out");
+  if (user) {
+    await releaseAllFor(user.id); // signing out ends any editing sessions
+    await audit(user.id, "logout", "user", user.id, "Signed out");
+  }
   redirect("/admin/login");
 }

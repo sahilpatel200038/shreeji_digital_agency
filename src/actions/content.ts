@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { AppError, fieldErrorsFrom, revalidateSite, run, type ActionResult } from "@/lib/action";
+import { assertEditLocks, assertNotLockedByOthers, lockKey } from "@/lib/edit-lock";
 import { requirePermission } from "@/lib/auth/session";
 import { audit } from "@/lib/audit";
 import { diffFields } from "@/lib/audit-format";
@@ -29,6 +30,7 @@ export async function saveProject(_prev: unknown, fd: FormData): Promise<ActionR
   return run(async () => {
     const user = await requirePermission("content:write");
     const id = Number(fd.get("id")) || 0;
+    if (id) await assertEditLocks(user, [lockKey.project(id)], fd);
     const parsed = projectSchema.safeParse({
       name: fd.get("name") ?? "",
       category: fd.get("category"),
@@ -58,6 +60,7 @@ export async function deleteProject(fd: FormData): Promise<void> {
   await flashOnError("/admin/projects", async () => {
     const user = await requirePermission("content:delete");
     const id = Number(fd.get("id"));
+    await assertNotLockedByOthers(user, [lockKey.project(id)]);
     const p = await db.project.findUnique({ where: { id } });
     if (!p) throw new AppError("That project no longer exists.");
     await db.project.delete({ where: { id } });
@@ -81,6 +84,7 @@ export async function saveTestimonial(_prev: unknown, fd: FormData): Promise<Act
   return run(async () => {
     const user = await requirePermission("content:write");
     const id = Number(fd.get("id")) || 0;
+    if (id) await assertEditLocks(user, [lockKey.testimonial(id)], fd);
     const parsed = testimonialSchema.safeParse({
       name: fd.get("name") ?? "",
       location: fd.get("location") ?? "",
@@ -107,6 +111,7 @@ export async function deleteTestimonial(fd: FormData): Promise<void> {
   await flashOnError("/admin/testimonials", async () => {
     const user = await requirePermission("content:delete");
     const id = Number(fd.get("id"));
+    await assertNotLockedByOthers(user, [lockKey.testimonial(id)]);
     const t = await db.testimonial.findUnique({ where: { id } });
     if (!t) throw new AppError("That testimonial no longer exists.");
     await db.testimonial.delete({ where: { id } });
@@ -129,6 +134,7 @@ export async function saveFaq(_prev: unknown, fd: FormData): Promise<ActionResul
   return run(async () => {
     const user = await requirePermission("content:write");
     const id = Number(fd.get("id")) || 0;
+    if (id) await assertEditLocks(user, [lockKey.faq(id)], fd);
     const parsed = faqSchema.safeParse({
       question: fd.get("question") ?? "",
       answer: fd.get("answer") ?? "",
@@ -152,6 +158,7 @@ export async function deleteFaq(fd: FormData): Promise<void> {
   await flashOnError("/admin/faqs", async () => {
     const user = await requirePermission("content:delete");
     const id = Number(fd.get("id"));
+    await assertNotLockedByOthers(user, [lockKey.faq(id)]);
     const f = await db.faq.findUnique({ where: { id } });
     if (!f) throw new AppError("That FAQ no longer exists.");
     await db.faq.delete({ where: { id } });

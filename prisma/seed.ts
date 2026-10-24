@@ -7,7 +7,7 @@ import { hashPassword, passwordProblems } from "../src/lib/auth/password";
 import { saveMedia } from "../src/lib/media/store";
 import { blocksSchema, readingMinutes } from "../src/lib/blocks/schema";
 import { SETTING_SCHEMAS } from "../src/lib/settings/schema";
-import { CORE_SERVICE_RENAMES, SERVICES, SERVICE_CATEGORIES } from "./seed-data/services";
+import { CORE_SERVICE_RENAMES, LEGACY_WEB_APP, MAIN_SERVICE_SLUGS, SERVICES, SERVICE_CATEGORIES } from "./seed-data/services";
 import { FAQS, MENUS, PAGES, POSTS, POST_CATEGORIES, PROJECTS, TESTIMONIALS } from "./seed-data/content";
 
 const IMG_DIR = path.join(__dirname, "seed-data", "images");
@@ -75,6 +75,44 @@ async function main() {
     const row = await db.serviceCategory.upsert({ where: { slug: c.slug }, update: {}, create: c });
     cat.set(c.slug, row.id);
   }
+  // The combined "Web / App Development & Design" service is now two services. The existing row (and its page
+  // history, images, SEO and relations) becomes "Web Development & Design"; the app service is created below.
+  // Its old address keeps working through a 301. Wording is refreshed only while it is still the original seeded text.
+  const legacyWeb = await db.service.findUnique({ where: { slug: LEGACY_WEB_APP.slug }, include: { seo: true } });
+  const webSeed = SERVICES.find((x) => x.slug === "web-development-design")!;
+  if (legacyWeb && !(await db.service.findUnique({ where: { slug: webSeed.slug } }))) {
+    const untouched = legacyWeb.summary === LEGACY_WEB_APP.summary;
+    const generic = ["Web & App Development", "Web / App Development & Design"].includes(legacyWeb.title);
+    await db.$transaction(async (tx) => {
+      await tx.service.update({
+        where: { id: legacyWeb.id },
+        data: {
+          slug: webSeed.slug,
+          isFeatured: true,
+          ...(generic ? { title: webSeed.title } : {}),
+          ...(untouched
+            ? { summary: webSeed.summary, heroHeading: webSeed.heroHeading, intro: webSeed.intro, benefits: webSeed.benefits, included: webSeed.included, process: webSeed.process }
+            : {}),
+        },
+      });
+      if (untouched && legacyWeb.seoId) {
+        await tx.seoMeta.update({ where: { id: legacyWeb.seoId }, data: { title: webSeed.seoTitle, description: webSeed.seoDescription, focusKeyword: webSeed.focusKeyword } });
+      }
+      const from = `/services/${LEGACY_WEB_APP.slug}`;
+      const to = `/services/${webSeed.slug}`;
+      await tx.redirect.upsert({ where: { fromPath: from }, create: { fromPath: from, toPath: to, statusCode: 301 }, update: { toPath: to, statusCode: 301, isActive: true } });
+      // Internal links inside stored page and post content follow the new address.
+      for (const model of [tx.page, tx.post] as const) {
+        const rows = await (model as typeof tx.page).findMany({ select: { id: true, blocks: true } });
+        for (const r of rows) {
+          const json = JSON.stringify(r.blocks);
+          if (json.includes(from)) await (model as typeof tx.page).update({ where: { id: r.id }, data: { blocks: JSON.parse(json.split(from).join(to)) } });
+        }
+      }
+    });
+    console.log(`renamed service ${LEGACY_WEB_APP.slug} -> ${webSeed.slug}`);
+  }
+
   const svc = new Map<string, number>();
   let order = 0;
   for (const s of SERVICES) {
@@ -87,6 +125,8 @@ async function main() {
     const seo = await db.seoMeta.create({
       data: { title: s.seoTitle, description: s.seoDescription, focusKeyword: s.focusKeyword },
     });
+    // A service added after the first seed goes to the end of the list instead of clashing with an existing position.
+    const topOrder = (await db.service.aggregate({ _max: { sortOrder: true } }))._max.sortOrder ?? 0;
     const row = await db.service.create({
       data: {
         categoryId: cat.get(s.category)!,
@@ -102,7 +142,8 @@ async function main() {
         blocks: [],
         status: "PUBLISHED",
         publishedAt: new Date(),
-        sortOrder: order,
+        sortOrder: Math.max(order, topOrder + 1),
+        isFeatured: s.featured ?? MAIN_SERVICE_SLUGS.has(s.slug),
         seoId: seo.id,
       },
     });
@@ -112,8 +153,6 @@ async function main() {
   for (const [slug, r] of Object.entries(CORE_SERVICE_RENAMES)) {
     await db.service.updateMany({ where: { slug, title: r.from }, data: { title: r.to } });
   }
-  // Service pages no longer show FAQs: drop any service-scoped FAQ rows.
-  await db.faq.deleteMany({ where: { serviceId: { not: null } } });
   for (const s of SERVICES) {
     for (const rel of s.related) {
       const a = svc.get(s.slug)!;

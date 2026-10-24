@@ -22,12 +22,20 @@ export function HeaderNav({
   items,
   groups,
   siteName,
-  ctaLabel,
+  logo,
+  brandName,
+  brandTagline,
+  cta,
 }: {
   items: NavItem[];
   groups: ServiceGroup[];
   siteName: string;
-  ctaLabel: string;
+  /** Admin-chosen logo (media URL); null = the bundled mark. */
+  logo: string | null;
+  brandName: string;
+  brandTagline: string;
+  /** Header button; null = hidden. */
+  cta: { label: string; href: string; newTab: boolean } | null;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -99,11 +107,13 @@ export function HeaderNav({
       <div className="container">
       <div className="row flex h-[72px] items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-3" aria-label={`${siteName} home`}>
-          <Image src="/brand/logo-mark.png" alt="" width={44} height={40} priority className="h-10 w-auto" />
-          <span className="leading-none">
-            <span className="block font-display text-lg font-extrabold tracking-tight text-forest-900">SHREEJI</span>
-            <span className="block font-display text-[11px] font-bold tracking-[0.28em] text-bronze-700">MARKETING</span>
-          </span>
+          <Image src={logo ?? "/brand/logo-mark.png"} alt="" width={44} height={40} priority className="h-10 w-auto" />
+          {(brandName || brandTagline) && (
+            <span className="leading-none">
+              {brandName && <span className="block font-display text-lg font-extrabold tracking-tight text-forest-900">{brandName}</span>}
+              {brandTagline && <span className="block font-display text-[11px] font-bold tracking-[0.28em] text-bronze-700">{brandTagline}</span>}
+            </span>
+          )}
         </Link>
 
         <nav aria-label="Primary" className="hidden lg:block">
@@ -166,6 +176,20 @@ export function HeaderNav({
                             </ul>
                           </div>
                         ))}
+                        {item.children.length > 0 && (
+                          <div className="col-span-2 border-t border-line pt-4">
+                            <p className="mb-2 text-xs font-bold tracking-[0.14em] text-bronze-700 uppercase">More</p>
+                            <ul className="grid grid-cols-2 gap-x-6 gap-y-0.5">
+                              {item.children.map((c) => (
+                                <li key={`${c.href}-${c.label}`}>
+                                  <Link href={c.href} onClick={() => onNavigate(c.href)} className="block rounded-md px-2 py-1.5 text-[15px] font-medium text-forest-900 hover:bg-forest-50 hover:text-bronze-700">
+                                    {c.label}
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -176,11 +200,13 @@ export function HeaderNav({
         </nav>
 
         <div className="flex items-center gap-3">
-          <div className="hidden sm:block">
-            <ButtonLink href="/contact" variant="primary" size="sm">
-              {ctaLabel}
-            </ButtonLink>
-          </div>
+          {cta && (
+            <div className="hidden sm:block">
+              <ButtonLink href={cta.href} variant="primary" size="sm" external={cta.newTab}>
+                {cta.label}
+              </ButtonLink>
+            </div>
+          )}
           <button
             ref={toggleRef}
             type="button"
@@ -241,15 +267,24 @@ export function HeaderNav({
                               </Link>
                             </li>
                           ))}
+                          {item.children.map((c) => (
+                            <li key={`${c.href}-${c.label}`}>
+                              <Link href={c.href} onClick={() => onNavigate(c.href)} className="block py-1.5 text-base text-muted hover:text-bronze-700">
+                                {c.label}
+                              </Link>
+                            </li>
+                          ))}
                         </ul>
                       )}
                     </li>
                   );
                 })}
               </ul>
-              <ButtonLink href="/contact" variant="accent" size="lg" className="mt-6 w-full" arrow onClick={() => onNavigate("/contact")}>
-                {ctaLabel}
-              </ButtonLink>
+              {cta && (
+                <ButtonLink href={cta.href} variant="accent" size="lg" className="mt-6 w-full" arrow external={cta.newTab} onClick={() => onNavigate(cta.href)}>
+                  {cta.label}
+                </ButtonLink>
+              )}
             </nav>
           </motion.div>
         )}

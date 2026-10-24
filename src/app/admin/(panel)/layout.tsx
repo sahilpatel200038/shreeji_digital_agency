@@ -16,6 +16,8 @@ const NAV: (AdminNavItem & { perm?: Permission })[] = [
   { href: "/admin/testimonials", label: "Testimonials", icon: "star" },
   { href: "/admin/faqs", label: "FAQs", icon: "list" },
   { href: "/admin/media", label: "Media library", icon: "image" },
+  { href: "/admin/header", label: "Header Management", icon: "layout", perm: "menus:write" },
+  { href: "/admin/footer", label: "Footer Management", icon: "layout", perm: "menus:write" },
   { href: "/admin/menus", label: "Menus", icon: "menu", perm: "menus:write" },
   { href: "/admin/leads", label: "Leads", icon: "inbox", perm: "leads:read" },
   { href: "/admin/seo", label: "SEO & redirects", icon: "search" },

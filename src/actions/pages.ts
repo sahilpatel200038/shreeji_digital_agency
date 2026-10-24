@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { AppError, fieldErrorsFrom, revalidateSite, run, type ActionResult } from "@/lib/action";
+import { assertEditLocks, assertNotLockedByOthers, lockKey } from "@/lib/edit-lock";
 import { requirePermission } from "@/lib/auth/session";
 import { audit } from "@/lib/audit";
 import { diffFields } from "@/lib/audit-format";
@@ -23,6 +24,7 @@ export async function savePage(_prev: unknown, fd: FormData): Promise<ActionResu
   return run(async () => {
     const user = await requirePermission("content:write");
     const id = Number(fd.get("id")) || 0;
+    if (id) await assertEditLocks(user, [lockKey.page(id)], fd);
 
     const media = Number(fd.get("featuredMediaId"));
     const parsed = pageSchema.safeParse({
@@ -88,6 +90,7 @@ export async function deletePage(fd: FormData): Promise<void> {
   await flashOnError("/admin/pages", async () => {
     const user = await requirePermission("content:delete");
     const id = Number(fd.get("id"));
+    await assertNotLockedByOthers(user, [lockKey.page(id)]);
     const page = await db.page.findUnique({ where: { id } });
     if (!page) throw new AppError("That page no longer exists.");
     if (page.isSystem) await requirePermission("system-page:delete");
@@ -105,6 +108,7 @@ export async function setPageStatus(fd: FormData): Promise<void> {
   await flashOnError("/admin/pages", async () => {
     const user = await requirePermission("content:write");
     const id = Number(fd.get("id"));
+    await assertNotLockedByOthers(user, [lockKey.page(id)]);
     const status = fd.get("status") === "PUBLISHED" ? "PUBLISHED" : "DRAFT";
     const page = await db.page.findUnique({ where: { id } });
     if (!page) throw new AppError("That page no longer exists.");

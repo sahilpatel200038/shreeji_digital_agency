@@ -7,6 +7,7 @@ import { Card, LinkButton, PageHeader } from "@/components/admin/ui";
 import { saveListingSeo } from "@/actions/listing-seo";
 import { getListingSeoRow, isListingKey, LISTING_PAGES } from "@/lib/seo/listing";
 import { siteUrl } from "@/lib/env";
+import { lockKey } from "@/lib/lock-keys";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export default async function EditSitePage({ params }: { params: Promise<{ key: 
         <Link href="/admin/site-pages" className="underline">All site pages</Link>. Empty fields use the built-in wording. The page text and pictures are edited in{" "}
         <Link href="/admin/settings" className="underline">Settings</Link>.
       </p>
-      <AdminForm action={saveListingSeo} submitLabel="Save SEO">
+      <AdminForm action={saveListingSeo} submitLabel="Save SEO" lock={[lockKey.setting(key === "home" ? "home" : `seo-${key}`)]}>
         <input type="hidden" name="key" value={key} />
         <Card title="SEO">
           <SeoPanel

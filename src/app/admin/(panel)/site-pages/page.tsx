@@ -3,7 +3,6 @@ import { requirePagePermission } from "@/lib/auth/session";
 import { Card, PageHeader, TableWrap, td, th } from "@/components/admin/ui";
 import { getListingSeoRow, LISTING_KEYS, LISTING_PAGES } from "@/lib/seo/listing";
 import { db } from "@/lib/db";
-import { CORE_SERVICE_SLUGS } from "@/lib/core-services";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +20,6 @@ export default async function SitePagesIndex() {
     db.page.findMany({ orderBy: [{ isSystem: "desc" }, { title: "asc" }], include: { seo: { select: { title: true } } } }),
     db.service.findMany({ orderBy: [{ sortOrder: "asc" }, { id: "asc" }], include: { seo: { select: { title: true, description: true } } } }),
   ]);
-  const core = new Set<string>(CORE_SERVICE_SLUGS);
   return (
     <>
       <PageHeader title="Site pages" description="Every page of the site and where to edit it. The Homepage and Contact page have their own screens; Services, Blog and FAQ text is in Settings and their modules, and their SEO is edited here." />
@@ -94,7 +92,7 @@ export default async function SitePagesIndex() {
                 {services.map((s) => (
                   <tr key={s.id}>
                     <td className={`${td} font-semibold`}>{s.title}</td>
-                    <td className={td}>{core.has(s.slug) ? "Main" : "Additional"}</td>
+                    <td className={td}>{s.isFeatured ? "Main" : "Additional"}</td>
                     <td className={td}><a href={`/services/${s.slug}`} target="_blank" className="text-bronze-700 underline">/services/{s.slug}</a></td>
                     <td className={td}>{s.seo?.title || <span className="text-muted">Default</span>}</td>
                     <td className={td}><Link href={`/admin/services/${s.id}`} className="font-semibold text-bronze-700 underline">Edit</Link></td>

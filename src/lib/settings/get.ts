@@ -23,6 +23,8 @@ export const getSettings = cache(async (): Promise<SiteSettings> => {
     social: parseGroup("social", map.get("social")),
     home: parseGroup("home", map.get("home")),
     banners: parseGroup("banners", map.get("banners")),
+    header: parseGroup("header", map.get("header")),
+    footer: parseGroup("footer", map.get("footer")),
     analytics: parseGroup("analytics", map.get("analytics")),
     seo: parseGroup("seo", map.get("seo")),
   };

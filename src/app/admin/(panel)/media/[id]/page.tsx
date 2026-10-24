@@ -45,7 +45,7 @@ export default async function MediaDetail({ params, searchParams }: { params: Pr
             </AdminForm>
           </Card>
           <Card title="Replace file">
-            <AdminForm action={replaceMedia} submitLabel="Replace image">
+            <AdminForm action={replaceMedia} submitLabel="Replace image" inline>
               <input type="hidden" name="id" value={m.id} />
               <FileField label="New image" name="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif" required hint="Keeps the same ID, so every place that uses this image updates automatically." />
             </AdminForm>

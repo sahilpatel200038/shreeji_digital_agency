@@ -19,7 +19,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <p className="text-sm text-muted">Shreeji Marketing CMS</p>
           </div>
         </div>
-        <AdminForm action={login} submitLabel="Sign in">
+        <AdminForm action={login} submitLabel="Sign in" inline>
           <input type="hidden" name="next" value={safeAdminNext(next)} />
           <TextInput label="Email" name="email" type="email" required />
           <TextInput label="Password" name="password" type="password" required />

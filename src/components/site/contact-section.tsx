@@ -57,7 +57,7 @@ export async function ContactSection() {
                   <Icon name="list" />
                 </span>
                 <span>
-                  <span className="block font-bold text-forest-900">Opening hours</span>
+                  <span className="block font-bold text-forest-900">{contact.hoursLabel}</span>
                   <span className="text-muted">{contact.hours}</span>
                 </span>
               </p>

@@ -2,7 +2,6 @@ import { cache } from "react";
 import { db } from "@/lib/db";
 import { parseBlocks } from "@/lib/blocks/schema";
 import { normalizePath } from "@/lib/safe-url";
-import { CORE_SERVICE_SLUGS } from "@/lib/core-services";
 import { readServicePageOptions } from "@/lib/service-page";
 
 /** Public visibility rule: PUBLISHED and not scheduled for the future. */
@@ -38,7 +37,7 @@ export const getServicesGrouped = cache(async () => {
       services: {
         where: publishedWhere(),
         orderBy: { sortOrder: "asc" },
-        select: { id: true, slug: true, title: true, summary: true, icon: true, featuredMedia: { select: { id: true, checksum: true, altText: true } }, },
+        select: { id: true, slug: true, title: true, summary: true, icon: true, isFeatured: true, featuredMedia: { select: { id: true, checksum: true, altText: true } }, },
       },
     },
   });
@@ -49,15 +48,12 @@ export const getPublishedServices = cache(async () =>
   db.service.findMany({
     where: publishedWhere(),
     orderBy: { sortOrder: "asc" },
-    select: { id: true, slug: true, title: true, summary: true, icon: true, featuredMedia: { select: { id: true, checksum: true, altText: true } }, category: { select: { name: true, slug: true } } },
+    select: { id: true, slug: true, title: true, summary: true, icon: true, isFeatured: true, featuredMedia: { select: { id: true, checksum: true, altText: true } }, category: { select: { name: true, slug: true } } },
   }),
 );
 
-/** The eight core services in their fixed display order (only those currently published). */
-export const getCoreServices = cache(async () => {
-  const all = await getPublishedServices();
-  return CORE_SERVICE_SLUGS.map((slug) => all.find((s) => s.slug === slug)).filter((s): s is NonNullable<typeof s> => Boolean(s));
-});
+/** The main services ("Main service" ticked in Admin > Services), in the admin display order, published ones only. */
+export const getCoreServices = cache(async () => (await getPublishedServices()).filter((s) => s.isFeatured));
 
 export const getServiceBySlug = cache(async (slug: string) => {
   const s = await db.service.findFirst({

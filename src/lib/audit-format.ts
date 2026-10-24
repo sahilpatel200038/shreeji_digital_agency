@@ -28,6 +28,8 @@ const MODULES: Record<string, string> = {
   media: "Media",
   menu: "Menus",
   setting: "Settings",
+  header: "Header",
+  footer: "Footer",
   "site-page": "Site pages",
   redirect: "Redirects",
   lead: "Leads",

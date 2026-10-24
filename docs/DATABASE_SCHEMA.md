@@ -33,6 +33,7 @@ Roles are an enum rather than a table: three fixed roles, permission matrix in c
 
 ### `Service`
 `id`, `categoryId` FK→ServiceCategory **RESTRICT**, `title`, `slug` UNIQUE, `summary` (card text), `icon` (key from icon set), `heroHeading`, `intro` TEXT, `benefits` JSON `[{title,text}]`, `included` JSON `string[]`, `process` JSON `[{title,text}]`, `blocks` JSON (extra body), `featuredMediaId` FK→Media SET NULL, `status`, `publishedAt`, `sortOrder`, `seoId` UNIQUE FK SET NULL, timestamps. INDEX(`status`,`sortOrder`), INDEX(`categoryId`).
+Since 2026-10-22: `isFeatured` BOOL default false ("Main service": homepage slider, top of `/services`, footer; replaces the former hard-coded list of eight core slugs), INDEX(`isFeatured`,`sortOrder`). The combined "Web / App Development & Design" row became `web-development-design`; `app-development-design`, `whatsapp-marketing` and `google-business-profile-optimization` were added (see `prisma/seed.ts`).
 ### `ServiceRelation` (m:n self)
 `serviceId`, `relatedId` composite PK, both FK→Service **CASCADE**.
 ### `ServiceFaq`
@@ -56,7 +57,7 @@ Not a separate table: service FAQs reuse `Faq` with optional `serviceId` FK → 
 `Menu(id, key UNIQUE ('header'|'footer-services'|'footer-company'|'footer-legal'), name)`. `MenuItem(id, menuId FK CASCADE, parentId FK→MenuItem CASCADE (nullable), label, href, sortOrder, openInNewTab, isActive)`. INDEX(`menuId`,`sortOrder`).
 
 ### `Setting`
-`key` VARCHAR(80) PK, `value` JSON, `updatedAt`, `updatedById`. One row per validated **group** (`general`, `contact`, `social`, `home`, `analytics`, `seo`), each parsed by a Zod schema in `src/lib/settings/schema.ts` and merged with defaults on read. Homepage statistics are stored in `home.stats` and shown only when `home.showStats` is true (default false).
+`key` VARCHAR(80) PK, `value` JSON, `updatedAt`, `updatedById`. One row per validated **group** (`general`, `contact`, `social`, `home`, `banners`, `header`, `footer`, `analytics`, `seo`), each parsed by a Zod schema in `src/lib/settings/schema.ts` and merged with defaults on read. Homepage statistics are stored in `home.stats` and shown only when `home.showStats` is true (default false).
 
 ### `Lead`, `LeadNote`
 `Lead` (reserved word in MySQL 8: always back-tick it in raw SQL) `(id, firstName, lastName, email, phone, company, service, message TEXT, status ENUM(NEW,CONTACTED,QUALIFIED,WON,LOST,SPAM) default NEW, source (page path), ipHash, userAgent, createdAt, updatedAt)`. INDEX(`status`,`createdAt`), INDEX(`email`).
@@ -77,6 +78,10 @@ IP is stored as a salted SHA-256 hash (privacy), not plaintext.
 
 ### `AuditLog`
 `id`, `userId` FK→User SET NULL, `action` (e.g. `page.update`), `entityType`, `entityId`, `summary`, `ipHash`, `createdAt`. INDEX(`createdAt`), INDEX(`entityType`,`entityId`). Append-only.
+
+### `EditLock`, `EditLockRequest` (added 2026-10-22)
+`EditLock(resourceKey PK VARCHAR(120), userId, userName, token, acquiredAt, heartbeatAt, expiresAt)` INDEX(`expiresAt`), INDEX(`userId`): one row = one exclusive, time-limited editing lease on a page or module (`service:5`, `setting:home`, `menu:header` ...). The primary key guarantees a single holder; `token` is the browser tab; leases last 90 s and are renewed every 20 s. No FK to `User` on purpose (the holder's name is snapshotted, and stale rows simply expire).
+`EditLockRequest(resourceKey, requesterId, requesterName, createdAt)` composite PK: "please let me edit" notes shown to the current holder. Logic: `src/lib/edit-lock.ts`; keys: `src/lib/lock-keys.ts`; HTTP API: `POST /api/admin/locks`.
 
 ### `RateLimit`
 `key` VARCHAR(190) PK (e.g. `login:ip:<hash>`, `contact:ip:<hash>`), `count`, `windowStart`. Persistent limiter that works across restarts/instances.

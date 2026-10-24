@@ -13,6 +13,8 @@ export type SeedService = {
   seoDescription: string;
   focusKeyword: string;
   related: string[];
+  /** Created as a "Main service" (homepage slider, top of /services, footer). Only applies when the row is first created. */
+  featured?: boolean;
 };
 
 const stdProcess = (a: string, b: string, c: string, d: string) => [
@@ -203,7 +205,7 @@ export const SERVICES: SeedService[] = [
     seoTitle: "B2B Lead Generation Services | Shreeji Marketing",
     seoDescription: "LinkedIn outreach, email automation, landing funnels and CRM management from Shreeji Marketing.",
     focusKeyword: "lead generation services",
-    related: ["digital-marketing", "analytics-insights", "web-app-development"],
+    related: ["digital-marketing", "analytics-insights", "web-development-design"],
   },
   {
     slug: "seo",
@@ -229,33 +231,61 @@ export const SERVICES: SeedService[] = [
     seoTitle: "SEO Services in Ahmedabad | Shreeji Marketing",
     seoDescription: "Technical SEO audits, content strategy, link building and monthly reporting from Shreeji Marketing in Ahmedabad.",
     focusKeyword: "SEO services in Ahmedabad",
-    related: ["digital-marketing", "web-app-development", "analytics-insights"],
+    related: ["digital-marketing", "web-development-design", "analytics-insights"],
   },
   {
-    slug: "web-app-development",
+    slug: "web-development-design",
     category: "web-technology",
-    title: "Web & App Development",
+    title: "Web Development & Design",
     icon: "code",
-    summary: "Websites, web apps and mobile apps built with React, Next.js, Node.js, Laravel and more, with API and CMS integrations.",
-    heroHeading: "Websites and apps built to perform and to last",
+    summary: "Fast, secure, search-friendly websites and web applications, designed and built around your brand, with API and CMS integrations.",
+    heroHeading: "Websites built to perform and to last",
     intro:
-      "We design and build fast, secure and maintainable websites, web applications and mobile apps. From marketing sites and e-commerce to custom business tools, we choose the technology that fits the job.",
+      "We design and build fast, secure and maintainable websites: business sites, e-commerce stores, landing pages and custom web applications. Design and development happen together, so what is approved on screen is what gets built, and we choose the technology that fits the job.",
     benefits: [
-      { title: "Modern stack", text: "React, Next.js, Node.js and other proven technologies." },
-      { title: "Integrations", text: "APIs, payment, CRM and CMS integrations that fit your workflow." },
-      { title: "Built for search", text: "Clean structure and speed that support SEO from day one." },
+      { title: "Design and build together", text: "One team owns the interface and the code, so nothing is lost between the mockup and the live site." },
+      { title: "Modern, proven stack", text: "React, Next.js, Node.js, Laravel and other technologies chosen for your needs, not for fashion." },
+      { title: "Built for search", text: "Clean structure, fast pages and sensible markup support SEO from day one." },
     ],
-    included: ["Business websites", "E-commerce", "Custom web applications", "iOS and Android apps", "API and CMS integrations"],
+    included: ["Business and brand websites", "E-commerce stores", "Landing pages and funnels", "Custom web applications", "CMS, API and payment integrations", "Responsive UI/UX design"],
     process: stdProcess(
-      "We gather requirements and define scope.",
-      "We design the experience and technical approach.",
-      "We build, test and launch in stages.",
-      "We support, monitor and iterate after launch.",
+      "We gather requirements, study your audience and define scope.",
+      "We design the pages and agree the technical approach.",
+      "We build, test on real devices and launch in stages.",
+      "We support, monitor and improve after launch.",
     ),
-    seoTitle: "Web & App Development in Ahmedabad | Shreeji Marketing",
-    seoDescription: "Websites, web apps and mobile apps built with Next.js, React, Node.js and Laravel by Shreeji Marketing.",
+    seoTitle: "Web Development & Design in Ahmedabad | Shreeji Marketing",
+    seoDescription: "Websites, e-commerce and web applications designed and built with Next.js, React, Node.js and Laravel by Shreeji Marketing in Ahmedabad.",
     focusKeyword: "web development company Ahmedabad",
-    related: ["ui-ux-graphics-design", "web-hosting", "seo"],
+    related: ["app-development-design", "ui-ux-graphics-design", "web-hosting", "seo"],
+    featured: true,
+  },
+  {
+    slug: "app-development-design",
+    category: "web-technology",
+    title: "App Development & Design",
+    icon: "smartphone",
+    summary: "Mobile apps for iOS and Android, from interface design to launch on the app stores, connected to your systems through APIs.",
+    heroHeading: "Mobile apps your customers will actually use",
+    intro:
+      "We design and build mobile apps for iOS and Android: customer apps, booking and ordering apps, and internal business tools. We start with the user journey, design the interface, then build, test and publish the app, using native or cross-platform technology depending on what the project needs.",
+    benefits: [
+      { title: "Designed around the user", text: "Flows and screens are mapped and prototyped before development starts." },
+      { title: "iOS and Android", text: "Native or cross-platform delivery, chosen for your budget, features and timeline." },
+      { title: "Connected to your business", text: "APIs, payments, notifications and your existing systems integrated." },
+    ],
+    included: ["App UI/UX design and prototypes", "iOS and Android development", "Backend and API development", "Push notifications and payments", "App store submission support", "Maintenance and updates"],
+    process: stdProcess(
+      "We define the audience, the core features and the platforms.",
+      "We design the user journey, screens and a clickable prototype.",
+      "We build, test on real devices and prepare the store listings.",
+      "We publish, monitor feedback and ship improvements.",
+    ),
+    seoTitle: "App Development & Design in Ahmedabad | Shreeji Marketing",
+    seoDescription: "iOS and Android app design and development from Shreeji Marketing in Ahmedabad, from prototype to app store launch.",
+    focusKeyword: "mobile app development company Ahmedabad",
+    related: ["web-development-design", "custom-software-development", "ui-ux-graphics-design"],
+    featured: true,
   },
   {
     slug: "web-hosting",
@@ -281,7 +311,7 @@ export const SERVICES: SeedService[] = [
     seoTitle: "Managed Web Hosting with SSL & Backups | Shreeji Marketing",
     seoDescription: "Managed cloud hosting, SSL, domains, daily backups and CDN from Shreeji Marketing.",
     focusKeyword: "managed web hosting India",
-    related: ["web-app-development", "ui-ux-graphics-design", "seo"],
+    related: ["web-development-design", "ui-ux-graphics-design", "seo"],
   },
   {
     slug: "ui-ux-graphics-design",
@@ -307,7 +337,7 @@ export const SERVICES: SeedService[] = [
     seoTitle: "UI/UX & Graphic Design Agency | Shreeji Marketing",
     seoDescription: "UI/UX design, logos, social graphics and print collateral from Shreeji Marketing in Ahmedabad.",
     focusKeyword: "UI UX design agency Ahmedabad",
-    related: ["web-app-development", "brand-strategy", "creative-production"],
+    related: ["web-development-design", "brand-strategy", "creative-production"],
   },
   {
     slug: "custom-software-development",
@@ -333,7 +363,7 @@ export const SERVICES: SeedService[] = [
     seoTitle: "Custom Software Development in Ahmedabad | Shreeji Marketing",
     seoDescription: "Custom business software, web applications, dashboards and integrations from Shreeji Marketing in Ahmedabad.",
     focusKeyword: "custom software development Ahmedabad",
-    related: ["web-app-development", "ui-ux-graphics-design", "web-hosting"],
+    related: ["web-development-design", "ui-ux-graphics-design", "web-hosting"],
   },
   {
     slug: "ads-management",
@@ -413,6 +443,60 @@ export const SERVICES: SeedService[] = [
     focusKeyword: "social media marketing agency Ahmedabad",
     related: ["ugc-content-creation", "influencer-marketing", "digital-marketing"],
   },
+  {
+    slug: "whatsapp-marketing",
+    category: "marketing-growth",
+    title: "WhatsApp Marketing",
+    icon: "message",
+    summary: "Permission-based WhatsApp campaigns, click-to-chat ads and automated replies that turn conversations into customers.",
+    heroHeading: "Reach customers where they already talk",
+    intro:
+      "WhatsApp is where many of your customers prefer to ask questions and decide. We set up your WhatsApp Business presence, plan opt-in campaigns, connect your ads and website to chat, and automate the routine replies, always within WhatsApp's business policies.",
+    benefits: [
+      { title: "Conversations, not blasts", text: "Messages go only to people who agreed to hear from you, with content they find useful." },
+      { title: "Faster replies", text: "Quick-reply flows, catalogues and automation answer common questions at any hour." },
+      { title: "Connected to your funnel", text: "Click-to-WhatsApp ads, website buttons and QR codes feed enquiries straight into chat." },
+    ],
+    included: ["WhatsApp Business profile and catalogue setup", "Opt-in collection and contact management", "Broadcast and campaign planning with approved templates", "Click-to-WhatsApp ads and website chat buttons", "Chatbot and auto-reply flows", "Campaign reporting"],
+    process: stdProcess(
+      "We review your audience, goals and current WhatsApp use.",
+      "We set up the business account, opt-in method and message templates.",
+      "We launch campaigns and automated flows, and handle replies with you.",
+      "We review delivery, replies and enquiries, then refine the messages.",
+    ),
+    seoTitle: "WhatsApp Marketing Services in Ahmedabad | Shreeji Marketing",
+    seoDescription: "WhatsApp Business setup, opt-in campaigns, click-to-chat ads and chatbot automation from Shreeji Marketing in Ahmedabad.",
+    focusKeyword: "WhatsApp marketing services",
+    related: ["lead-generation", "social-media-marketing", "ads-management"],
+    featured: true,
+  },
+  {
+    slug: "google-business-profile-optimization",
+    category: "marketing-growth",
+    title: "Google Business Profile Optimization",
+    icon: "map-pin",
+    summary: "Get found on Google Search and Maps with a complete, accurate and active Google Business Profile that earns calls, visits and reviews.",
+    heroHeading: "Be the business people find nearby",
+    intro:
+      "Your Google Business Profile is often the first thing a local customer sees. We claim and verify it, complete every section accurately, keep it active with posts and photos, and help you collect genuine reviews and respond to them, so you show up when people search for what you do.",
+    benefits: [
+      { title: "Found on Search and Maps", text: "Correct categories, services and details help Google match you to local searches." },
+      { title: "A profile that earns trust", text: "Photos, posts and professional replies to reviews show customers you are active." },
+      { title: "Genuine reviews only", text: "We help you ask real customers for feedback and never buy or write fake reviews." },
+    ],
+    included: ["Profile claim, verification and clean-up", "Categories, services, products and attributes", "Photos, posts and offers", "Review request process and reply management", "Local keyword and citation checks", "Monthly insights report"],
+    process: stdProcess(
+      "We audit your profile, listings and local competitors.",
+      "We correct and complete the profile and fix inconsistent listings.",
+      "We publish posts and photos and set up the review process.",
+      "We track calls, direction requests and views, and keep improving.",
+    ),
+    seoTitle: "Google Business Profile Optimization in Ahmedabad | Shreeji Marketing",
+    seoDescription: "Google Business Profile setup and optimization from Shreeji Marketing: local SEO, posts, photos and review management to get found on Google Maps.",
+    focusKeyword: "Google Business Profile optimization",
+    related: ["seo", "digital-marketing", "lead-generation"],
+    featured: true,
+  },
 ];
 
 export const SERVICE_CATEGORIES = [
@@ -422,6 +506,23 @@ export const SERVICE_CATEGORIES = [
 
 /** Display names applied by the seed for services that were renamed when the eight core services were defined. */
 export const CORE_SERVICE_RENAMES: Record<string, { from: string; to: string }> = {
-  "web-app-development": { from: "Web & App Development", to: "Web / App Development & Design" },
   seo: { from: "SEO", to: "Search Engine Optimization" },
 };
+
+/** The combined service this project shipped with. The seed turns that row into "Web Development & Design" (see prisma/seed.ts). */
+export const LEGACY_WEB_APP = { slug: "web-app-development", summary: 'Websites, web apps and mobile apps built with React, Next.js, Node.js, Laravel and more, with API and CMS integrations.' };
+
+/** Services created as "Main services" on a fresh install (existing installs got the same flags from a migration). */
+export const MAIN_SERVICE_SLUGS = new Set([
+  "web-development-design",
+  "app-development-design",
+  "custom-software-development",
+  "seo",
+  "digital-marketing",
+  "ads-management",
+  "ugc-content-creation",
+  "social-media-marketing",
+  "influencer-marketing",
+  "whatsapp-marketing",
+  "google-business-profile-optimization",
+]);

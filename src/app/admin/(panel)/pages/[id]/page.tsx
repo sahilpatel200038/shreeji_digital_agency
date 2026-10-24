@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requirePagePermission } from "@/lib/auth/session";
+import Link from "next/link";
 import { Flash, LinkButton, PageHeader } from "@/components/admin/ui";
 import { PageEditor } from "@/components/admin/page-editor";
 
@@ -23,6 +24,11 @@ export default async function EditPage({ params, searchParams }: { params: Promi
         }
       />
       <Flash params={await searchParams} />
+      {page.slug === "about" && (
+        <p className="mb-5 rounded-[var(--radius-field)] border border-bronze-300 bg-bronze-100/50 p-3.5 text-sm text-forest-900">
+          This edits the company profile text and banner. The <strong>team section</strong> is managed in <Link href="/admin/team" className="font-semibold underline">Team</Link> (members, photos, order, show/hide and its heading); the profile photo and work heading are in <Link href="/admin/settings" className="font-semibold underline">Settings, Page banners</Link>.
+        </p>
+      )}
       <PageEditor page={page} />
     </>
   );

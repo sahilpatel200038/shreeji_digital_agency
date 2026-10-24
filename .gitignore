@@ -1,6 +1,7 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Shreeji Marketing: Next.js 16 + Prisma 7 + MySQL. Lockfile (package-lock.json), prisma/migrations and
+# .env.example are tracked on purpose. See README.md > Environment.
 
-# dependencies
+# --- dependencies ---
 /node_modules
 /.pnp
 .pnp.*
@@ -10,46 +11,63 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
+# --- environment & secrets (never commit real values; copy .env.example to .env) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
 
-# next.js
+# --- Next.js build output ---
 /.next/
 /out/
-
-# production
 /build
+# isolated build used by the Playwright suite (NEXT_DIST_DIR=.next-e2e)
+/.next-e2e/
+next-env.d.ts
+*.tsbuildinfo
 
-# misc
-.DS_Store
-*.pem
+# --- Prisma generated client (created by `prisma generate`, which runs on postinstall) ---
+/src/generated
 
-# debug
+# --- tests & reports ---
+/coverage
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+
+# --- logs, caches, temporary files ---
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+.eslintcache
+.cache/
+.turbo/
+tmp/
+*.tmp
+*.pid
 
-# env files (can opt-in for committing if needed)
-.env*
+# --- editors & OS ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+Desktop.ini
 
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-/src/generated/prisma
-
-# generated
-/src/generated
-/test-results
-/playwright-report
+# --- local AI-assistant tooling (not part of the application) ---
 .agents
 .windsurf
+.claude/
 skills-lock.json
-!.env.example
 
-# isolated test build
-/.next-e2e/
+# --- deployment ---
+.vercel
+
+# --- screenshot/dev build output ---
+.next-shot/

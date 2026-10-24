@@ -8,6 +8,7 @@ import { MediaPicker } from "@/components/admin/media-picker";
 import { SeoPanel } from "@/components/admin/seo-panel";
 import { Card, LinkButton, PageHeader } from "@/components/admin/ui";
 import { saveContactPage } from "@/actions/site-content";
+import { lockKey } from "@/lib/lock-keys";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function ContactPageEditor() {
           </p>
         </Card>
       ) : (
-        <AdminForm action={saveContactPage} submitLabel="Save contact page">
+        <AdminForm action={saveContactPage} submitLabel="Save contact page" lock={[lockKey.setting("contact")]}>
           <input type="hidden" name="contactPageForm" value="1" />
           <div className="space-y-6">
             <Card title="Page banner">
@@ -68,6 +69,7 @@ export default async function ContactPageEditor() {
                 <TextInput label="Address label" name="visitLabel" defaultValue={contact.visitLabel} maxLength={40} />
                 <TextInput label="Phone label" name="callLabel" defaultValue={contact.callLabel} maxLength={40} />
                 <TextInput label="Email label" name="emailLabel" defaultValue={contact.emailLabel} maxLength={40} />
+                <TextInput label="Opening hours label" name="hoursLabel" defaultValue={contact.hoursLabel} maxLength={40} />
                 <TextInput label="Map link text" name="mapsLabel" defaultValue={contact.mapsLabel} maxLength={60} />
               </div>
             </Card>

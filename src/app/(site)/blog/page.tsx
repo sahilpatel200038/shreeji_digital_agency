@@ -37,7 +37,7 @@ export default async function BlogPage({ searchParams }: Props) {
 
   return (
     <>
-      <PageHero eyebrow="Our blog" title={settings.banners.blogTitle} intro={settings.banners.blogText} crumbs={[{ name: "Blog", path: "/blog" }]} image={resolveBanner("blog", banner)} />
+      <PageHero eyebrow={settings.banners.blogEyebrow} title={settings.banners.blogTitle} intro={settings.banners.blogText} crumbs={[{ name: "Blog", path: "/blog" }]} image={resolveBanner("blog", banner)} />
       <Section>
         <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <nav aria-label="Blog categories" className="flex flex-wrap gap-3">
@@ -77,7 +77,7 @@ export default async function BlogPage({ searchParams }: Props) {
         )}
         <Pagination page={data.page} pages={data.pages} makeHref={makeHref} />
       </Section>
-      <ServicesSliderSection id="services-slider" title="Services that grow your brand" text="Put these articles into practice with our team." />
+      <ServicesSliderSection id="services-slider" title={settings.banners.blogServicesTitle} text={settings.banners.blogServicesText} />
     </>
   );
 }

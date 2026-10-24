@@ -9,6 +9,7 @@ import { MediaPicker } from "@/components/admin/media-picker";
 import { SeoPanel } from "@/components/admin/seo-panel";
 import { Card, LinkButton, PageHeader } from "@/components/admin/ui";
 import { saveHomePage } from "@/actions/site-content";
+import { lockKey } from "@/lib/lock-keys";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ export default async function HomePageEditor() {
   return (
     <>
       <PageHeader title="Edit: Homepage" description="Every section of the homepage in one place: text, buttons, picture, which sections appear, and SEO." actions={<LinkButton href="/" variant="outline">View live</LinkButton>} />
-      <AdminForm action={saveHomePage} submitLabel="Save homepage">
+      <AdminForm action={saveHomePage} submitLabel="Save homepage" lock={[lockKey.setting("home")]}>
         <input type="hidden" name="sectionsForm" value="1" />
         <div className="space-y-6">
           <Card title="Hero (top of the page)">

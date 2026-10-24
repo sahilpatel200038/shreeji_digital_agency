@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { AppError, fieldErrorsFrom, revalidateSite, run, type ActionResult } from "@/lib/action";
+import { assertEditLocks, lockKey } from "@/lib/edit-lock";
 import { requirePermission } from "@/lib/auth/session";
 import { audit } from "@/lib/audit";
 import { seoFromForm } from "@/lib/validation/seo";
@@ -14,6 +15,7 @@ export async function saveListingSeo(_prev: unknown, fd: FormData): Promise<Acti
     const user = await requirePermission("content:write");
     const key = String(fd.get("key"));
     if (!isListingKey(key)) throw new AppError("Unknown page.");
+    await assertEditLocks(user, [lockKey.setting(key === "home" ? "home" : `seo-${key}`)], fd);
     const seo = seoFromForm(fd);
     if (!seo.success) throw new AppError("Please fix the SEO fields.", fieldErrorsFrom(seo.error));
     if (seo.data.ogMediaId && (await db.media.count({ where: { id: seo.data.ogMediaId, mimeType: { startsWith: "image/" } } })) === 0) {

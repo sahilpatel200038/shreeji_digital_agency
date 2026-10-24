@@ -37,4 +37,7 @@ export async function cleanup() {
   await query("DELETE FROM MenuItem WHERE label LIKE 'E2E %'");
   await query("DELETE FROM Project WHERE name LIKE 'E2E %'");
   await query("DELETE FROM Faq WHERE question LIKE 'E2E %'");
+  await query("DELETE FROM TeamMember WHERE name LIKE 'E2E %'");
+  await query("DELETE FROM EditLock");
+  await query("DELETE FROM EditLockRequest");
 }

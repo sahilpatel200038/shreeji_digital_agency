@@ -79,7 +79,7 @@ export default async function CmsPage({ params }: Props) {
         <WorkSliderSection id="work" tone="paper" title={settings.banners.aboutWorkTitle} text={settings.banners.aboutWorkText} />
       ) : (
         (!isContact || settings.contact.showServices) && (
-          <ServicesSliderSection id="services-slider" title={isContact ? settings.contact.servicesTitle : "Our core services"} text={isContact ? settings.contact.servicesText || undefined : undefined} />
+          <ServicesSliderSection id="services-slider" title={isContact ? settings.contact.servicesTitle : settings.banners.pageServicesTitle} text={isContact ? settings.contact.servicesText || undefined : undefined} />
         )
       )}
     </>

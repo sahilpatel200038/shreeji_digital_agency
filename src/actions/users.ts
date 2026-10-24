@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { AppError, fieldErrorsFrom, run, type ActionResult } from "@/lib/action";
+import { assertEditLocks, lockKey } from "@/lib/edit-lock";
 import { requirePermission, revokeUserSessions } from "@/lib/auth/session";
 import { hashPassword, passwordProblems } from "@/lib/auth/password";
 import { audit } from "@/lib/audit";
@@ -46,6 +47,7 @@ export async function updateUser(_prev: unknown, fd: FormData): Promise<ActionRe
   return run(async () => {
     const actor = await requirePermission("users:manage");
     const id = Number(fd.get("id"));
+    await assertEditLocks(actor, [lockKey.user(id)], fd);
     const parsed = updateSchema.safeParse({ name: fd.get("name") ?? "", role: fd.get("role") });
     if (!parsed.success) throw new AppError("Please fix the highlighted fields.", fieldErrorsFrom(parsed.error));
     const isActive = fd.get("isActive") === "on";

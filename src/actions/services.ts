@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { AppError, fieldErrorsFrom, revalidateSite, run, type ActionResult } from "@/lib/action";
+import { assertEditLocks, assertNotLockedByOthers, lockKey } from "@/lib/edit-lock";
 import { requirePermission } from "@/lib/auth/session";
 import { audit } from "@/lib/audit";
 import { diffFields } from "@/lib/audit-format";
@@ -21,6 +22,7 @@ const serviceSchema = z.object({
   heroHeading: z.string().trim().max(255),
   intro: z.string().trim().max(5000),
   sortOrder: z.number().int().min(0).max(9999),
+  isFeatured: z.boolean(),
   featuredMediaId: z.number().int().positive().nullable(),
 });
 
@@ -28,6 +30,7 @@ export async function saveService(_prev: unknown, fd: FormData): Promise<ActionR
   return run(async () => {
     const user = await requirePermission("content:write");
     const id = Number(fd.get("id")) || 0;
+    if (id) await assertEditLocks(user, [lockKey.service(id)], fd);
     const media = Number(fd.get("featuredMediaId"));
     const parsed = serviceSchema.safeParse({
       title: fd.get("title") ?? "",
@@ -38,6 +41,7 @@ export async function saveService(_prev: unknown, fd: FormData): Promise<ActionR
       heroHeading: fd.get("heroHeading") ?? "",
       intro: fd.get("intro") ?? "",
       sortOrder: Number(fd.get("sortOrder") ?? 0) || 0,
+      isFeatured: fd.get("isFeatured") === "on",
       featuredMediaId: Number.isInteger(media) && media > 0 ? media : null,
     });
     if (!parsed.success) throw new AppError("Please fix the highlighted fields.", fieldErrorsFrom(parsed.error));
@@ -80,6 +84,7 @@ export async function saveService(_prev: unknown, fd: FormData): Promise<ActionR
         status: parsed.data.status,
         publishedAt,
         sortOrder: parsed.data.sortOrder,
+        isFeatured: parsed.data.isFeatured,
         seoId,
       };
       const row = existing ? await tx.service.update({ where: { id }, data }) : await tx.service.create({ data });
@@ -94,7 +99,7 @@ export async function saveService(_prev: unknown, fd: FormData): Promise<ActionR
       if (faqs.length) await tx.faq.createMany({ data: faqs.map((f, i) => ({ ...f, category: "Services", serviceId: row.id, sortOrder: i + 1, status: "PUBLISHED" as const })) });
 
       if (existing && existing.status === "PUBLISHED" && existing.slug !== slug) await redirectOnSlugChange(tx, "/services", existing.slug, slug);
-      const changes = existing ? diffFields({ ...existing, content: JSON.stringify({ blocks: existing.blocks, benefits: existing.benefits, included: existing.included, process: existing.process, pageOptions: existing.pageOptions, faqs: oldFaqs }) }, { ...data, content: JSON.stringify({ blocks, benefits, included, process, pageOptions: options.data, faqs }) }, ["title", "slug", "categoryId", "summary", "icon", "heroHeading", "intro", "featuredMediaId", "status", "publishedAt", "sortOrder", "content"]) : null;
+      const changes = existing ? diffFields({ ...existing, content: JSON.stringify({ blocks: existing.blocks, benefits: existing.benefits, included: existing.included, process: existing.process, pageOptions: existing.pageOptions, faqs: oldFaqs }) }, { ...data, content: JSON.stringify({ blocks, benefits, included, process, pageOptions: options.data, faqs }) }, ["title", "slug", "categoryId", "summary", "icon", "heroHeading", "intro", "featuredMediaId", "status", "publishedAt", "sortOrder", "isFeatured", "content"]) : null;
       return { id: row.id, changes };
     });
 
@@ -112,6 +117,7 @@ export async function deleteService(fd: FormData): Promise<void> {
   await flashOnError(returnTo(fd), async () => {
     const user = await requirePermission("content:delete");
     const id = Number(fd.get("id"));
+    await assertNotLockedByOthers(user, [lockKey.service(id)]);
     const s = await db.service.findUnique({ where: { id } });
     if (!s) throw new AppError("That service no longer exists.");
     await db.$transaction(async (tx) => {
@@ -147,6 +153,7 @@ export async function setServiceStatus(fd: FormData): Promise<void> {
   await flashOnError(returnTo(fd), async () => {
     const user = await requirePermission("content:write");
     const id = Number(fd.get("id"));
+    await assertNotLockedByOthers(user, [lockKey.service(id)]);
     const status = fd.get("status") === "PUBLISHED" ? "PUBLISHED" : "DRAFT";
     const s = await db.service.findUnique({ where: { id } });
     if (!s) throw new AppError("That service no longer exists.");

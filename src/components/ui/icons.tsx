@@ -78,6 +78,18 @@ const paths: Record<string, React.ReactNode> = {
       <path d="M7 7.5h.01M7 16.5h.01" />
     </>
   ),
+  message: (
+    <>
+      <path d="M21 11.5a8.4 8.4 0 0 1-12.2 7.5L3 20.5l1.6-5.3A8.4 8.4 0 1 1 21 11.5Z" />
+      <path d="M8.5 9.5c.3 2.4 2.6 4.7 5 5l1.4-1.4-1.8-1-.9.7a3.6 3.6 0 0 1-1.7-1.7l.7-.9-1-1.8-1.7 1.1Z" />
+    </>
+  ),
+  smartphone: (
+    <>
+      <rect x="6.5" y="2.5" width="11" height="19" rx="2.5" />
+      <path d="M11 18.5h2" />
+    </>
+  ),
   pen: (
     <>
       <path d="m4 20 1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1Z" />
@@ -117,6 +129,12 @@ const paths: Record<string, React.ReactNode> = {
   check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
   plus: <path d="M12 5v14M5 12h14" />,
   minus: <path d="M5 12h14" />,
+  "x-social": (
+    <>
+      <path d="M4 4h4.5l11.5 16h-4.5Z" />
+      <path d="M19.5 4 13.2 10.6M4.5 20l6.3-6.6" />
+    </>
+  ),
   instagram: (
     <>
       <rect x="3" y="3" width="18" height="18" rx="5" />

@@ -35,12 +35,12 @@ async function pickSecondImage(page: Page, inputName: string) {
 }
 
 test.describe("coverage: every public page has an admin screen", () => {
-  test("home, contact, about and all 15 services are editable in the admin", async ({ page, request }) => {
+  test("home, contact, about and all 18 services are editable in the admin", async ({ page, request }) => {
     const services = await query<{ id: number; slug: string; status: string }>("SELECT id, slug, status FROM Service ORDER BY sortOrder");
     const routeSlugs = PUBLIC_ROUTES.filter((r) => r.startsWith("/services/")).map((r) => r.replace("/services/", "")).sort();
     // A service added in the database but missing from the route list would otherwise go untested.
     expect(services.map((s) => s.slug).sort()).toEqual(routeSlugs);
-    expect(services).toHaveLength(15);
+    expect(services).toHaveLength(18);
 
     for (const route of ["/", "/contact", "/about"]) expect((await request.get(route)).status(), route).toBe(200);
     for (const s of services) expect((await request.get(`/services/${s.slug}`)).status(), s.slug).toBe(200);
@@ -62,7 +62,7 @@ test.describe("coverage: every public page has an admin screen", () => {
     // The index lists them all, split into main and additional services.
     await page.goto("/admin/site-pages");
     for (const s of services) await expect(page.getByRole("link", { name: `/services/${s.slug}` })).toBeVisible();
-    await expect(page.getByRole("cell", { name: "Main", exact: true })).toHaveCount(8);
+    await expect(page.getByRole("cell", { name: "Main", exact: true })).toHaveCount(11);
     await expect(page.getByRole("cell", { name: "Additional", exact: true })).toHaveCount(7);
   });
 });
@@ -257,7 +257,7 @@ test.describe.serial("Contact page", () => {
   });
 });
 
-test.describe("service pages (all 15)", () => {
+test.describe("service pages (all 18)", () => {
   test.describe.configure({ mode: "serial" });
   let services: { id: number; slug: string; title: string }[] = [];
 
@@ -363,7 +363,7 @@ test.describe("access control", () => {
 });
 
 test.describe.serial("Pages Management table", () => {
-  test("lists Home, About, Contact, legal pages and all 15 services exactly once, with working Edit and Preview", async ({ page }) => {
+  test("lists Home, About, Contact, legal pages and all 18 services exactly once, with working Edit and Preview", async ({ page }) => {
     const services = await query<{ id: number; slug: string }>("SELECT id, slug FROM Service");
     const pages = await query<{ id: number; slug: string }>("SELECT id, slug FROM Page WHERE slug NOT LIKE 'e2e-%'");
     await page.goto("/admin/pages?q=");

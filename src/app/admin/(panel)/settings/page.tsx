@@ -5,6 +5,7 @@ import { AdminForm, CheckboxField, TextArea, TextInput } from "@/components/admi
 import { MediaPicker } from "@/components/admin/media-picker";
 import { Card, PageHeader } from "@/components/admin/ui";
 import { saveSettings } from "@/actions/settings";
+import { lockKey } from "@/lib/lock-keys";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ function Group({ name, title, children, note }: { name: string; title: string; c
   return (
     <Card title={title}>
       {note && <p className="mb-4 text-sm text-muted">{note}</p>}
-      <AdminForm action={saveSettings} submitLabel="Save">
+      <AdminForm action={saveSettings} submitLabel="Save" lock={[lockKey.setting(name)]}>
         <input type="hidden" name="group" value={name} />
         {children}
       </AdminForm>
@@ -157,6 +158,20 @@ export default async function SettingsPage() {
             <TextInput label="About page: team heading" name="teamTitle" defaultValue={s.banners.teamTitle} maxLength={120} />
             <TextInput label="About page: work heading" name="aboutWorkTitle" defaultValue={s.banners.aboutWorkTitle} maxLength={120} />
             <TextInput label="About page: work intro" name="aboutWorkText" defaultValue={s.banners.aboutWorkText} maxLength={300} />
+            <TextInput label="Services page: banner label" name="servicesEyebrow" defaultValue={s.banners.servicesEyebrow} maxLength={60} />
+            <TextInput label="Services page: main services label" name="servicesCoreEyebrow" defaultValue={s.banners.servicesCoreEyebrow} maxLength={60} />
+            <TextInput label="Services page: main services heading" name="servicesCoreTitle" defaultValue={s.banners.servicesCoreTitle} maxLength={120} />
+            <TextInput label="Services page: other services label" name="servicesMoreEyebrow" defaultValue={s.banners.servicesMoreEyebrow} maxLength={60} />
+            <TextInput label="Services page: other services heading" name="servicesMoreTitle" defaultValue={s.banners.servicesMoreTitle} maxLength={120} />
+            <TextInput label="Blog page: banner label" name="blogEyebrow" defaultValue={s.banners.blogEyebrow} maxLength={60} />
+            <TextInput label="Blog page: services heading" name="blogServicesTitle" defaultValue={s.banners.blogServicesTitle} maxLength={120} />
+            <TextInput label="Blog page: services intro" name="blogServicesText" defaultValue={s.banners.blogServicesText} maxLength={300} />
+            <TextInput label="FAQ page: banner label" name="faqEyebrow" defaultValue={s.banners.faqEyebrow} maxLength={60} />
+            <TextInput label="FAQ page: call-to-action heading" name="faqCtaTitle" defaultValue={s.banners.faqCtaTitle} maxLength={120} />
+            <TextInput label="FAQ page: call-to-action text" name="faqCtaText" defaultValue={s.banners.faqCtaText} maxLength={300} />
+            <TextInput label="FAQ page: call-to-action button" name="faqCtaLabel" defaultValue={s.banners.faqCtaLabel} maxLength={40} />
+            <TextInput label="FAQ page: services heading" name="faqServicesTitle" defaultValue={s.banners.faqServicesTitle} maxLength={120} />
+            <TextInput label="Text pages: services heading" name="pageServicesTitle" defaultValue={s.banners.pageServicesTitle} maxLength={120} hint="Shown under standard pages such as Privacy Policy." />
             <MediaPicker name="aboutProfile" label="About page: company profile picture" defaultId={s.banners.aboutProfile} hint="Shown beside the company profile text. Landscape, at least 1200×900." />
             <MediaPicker name="services" label="Services page picture" defaultId={s.banners.services} />
             <MediaPicker name="blog" label="Blog picture (also blog categories and posts without an image)" defaultId={s.banners.blog} />

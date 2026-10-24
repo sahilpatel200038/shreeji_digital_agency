@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { requirePagePermission } from "@/lib/auth/session";
-import { Card, PageHeader } from "@/components/admin/ui";
+import { Card, LinkButton, PageHeader } from "@/components/admin/ui";
 import { MenuEditor } from "@/components/admin/menu-editor";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +22,7 @@ export default async function MenusPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <PageHeader title="Menus" description="Control the links in the header and footer. In the header, an item linking to /services automatically shows a dropdown of all published services. Footer service links list your published services automatically." />
+      <PageHeader title="Menus" description="Link lists. The header and footer links are edited in Header Management and Footer Management." />
       <nav aria-label="Menus" className="mb-6 flex flex-wrap gap-2">
         {menus.map((m) => (
           <Link key={m.id} href={`/admin/menus?menu=${m.key}`} aria-current={m.id === current?.id ? "true" : undefined} className={cn("inline-flex min-h-11 items-center rounded-full border px-5 text-sm font-semibold", m.id === current?.id ? "border-forest-900 bg-forest-900 text-white" : "border-line bg-white hover:border-bronze-300")}>
@@ -30,11 +30,21 @@ export default async function MenusPage({ searchParams }: { searchParams: Promis
           </Link>
         ))}
       </nav>
-      {current ? (
+      {current && (current.key === "header" || current.key.startsWith("footer-")) ? (
+        <Card title={LABELS[current.key] ?? current.name}>
+          <p className="text-muted">
+            This list is edited together with the rest of the {current.key === "header" ? "header" : "footer"}, so there is only one place to change it.
+          </p>
+          <div className="mt-4">
+            <LinkButton href={current.key === "header" ? "/admin/header" : "/admin/footer"}>Open {current.key === "header" ? "Header" : "Footer"} Management</LinkButton>
+          </div>
+        </Card>
+      ) : current ? (
         <Card title={LABELS[current.key] ?? current.name}>
           <MenuEditor
             key={current.id}
             menuId={current.id}
+            menuKey={current.key}
             initial={items.map((i) => ({ key: `i${i.id}`, parentKey: i.parentId ? `i${i.parentId}` : null, label: i.label, href: i.href, openInNewTab: i.openInNewTab, isActive: i.isActive }))}
           />
         </Card>

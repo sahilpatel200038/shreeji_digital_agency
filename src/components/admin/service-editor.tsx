@@ -11,10 +11,11 @@ import { scoreSeo } from "@/lib/seo/score";
 import { siteUrl } from "@/lib/env";
 import { db } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma/client";
+import { lockKey } from "@/lib/lock-keys";
 
 type ServiceFull = Prisma.ServiceGetPayload<{ include: { seo: true; related: true } }>;
 
-const ICONS = ["target", "megaphone", "layout", "camera", "users", "chart", "funnel", "search", "code", "server", "pen", "sparkles"];
+const ICONS = ["target", "megaphone", "layout", "camera", "users", "chart", "funnel", "search", "code", "server", "pen", "sparkles", "message", "smartphone", "map-pin", "phone"];
 
 const pairs = (v: unknown, a: string, b: string) =>
   ((v as Record<string, string>[] | null) ?? []).map((x) => `${x[a]} | ${x[b]}`).join("\n");
@@ -47,7 +48,7 @@ export async function ServiceEditor({ service }: { service: ServiceFull | null }
     : null;
 
   return (
-    <AdminForm action={saveService} submitLabel={service ? "Save service" : "Create service"}>
+    <AdminForm action={saveService} submitLabel={service ? "Save service" : "Create service"} lock={service ? [lockKey.service(service.id)] : undefined} cancelHref="/admin/services">
       {service && <input type="hidden" name="id" value={service.id} />}
       <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
         <div className="space-y-6">
@@ -116,6 +117,7 @@ export async function ServiceEditor({ service }: { service: ServiceFull | null }
               <SelectField label="Status" name="status" defaultValue={service?.status ?? "DRAFT"} options={[{ value: "DRAFT", label: "Draft (not public)" }, { value: "PUBLISHED", label: "Published" }]} />
               <TextInput label="Publish date (IST)" name="publishedAt" type="datetime-local" defaultValue={toDatetimeLocal(service?.publishedAt)} />
               <TextInput label="Display order" name="sortOrder" type="number" min={0} max={9999} defaultValue={service?.sortOrder ?? count + 1} hint="Lower numbers appear first." />
+              <CheckboxField label="Main service" name="isFeatured" defaultChecked={service?.isFeatured ?? false} hint="Shown in the homepage slider, at the top of the Services page and in the footer. Others appear under “More ways we can help”." />
             </div>
           </Card>
           <Card title="Organise">

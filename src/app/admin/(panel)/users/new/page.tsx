@@ -9,7 +9,7 @@ export default async function NewUser() {
     <>
       <PageHeader title="Add user" />
       <Card>
-        <AdminForm action={createUser} submitLabel="Create user">
+        <AdminForm action={createUser} submitLabel="Create user" cancelHref="/admin/users">
           <div className="grid gap-4 md:grid-cols-2">
             <TextInput label="Full name" name="name" required maxLength={120} />
             <TextInput label="Email" name="email" type="email" required maxLength={190} />

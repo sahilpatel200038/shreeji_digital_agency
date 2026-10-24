@@ -6,7 +6,6 @@ import { Empty, FilterBar, Flash, LinkButton, PageHeader, Pager, StatusBadge, Ta
 import { ConfirmButton } from "@/components/admin/confirm-button";
 import { deletePage, setPageStatus } from "@/actions/pages";
 import { deleteService, setServiceStatus } from "@/actions/services";
-import { CORE_SERVICE_SLUGS } from "@/lib/core-services";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -25,13 +24,12 @@ export default async function PagesList({ searchParams }: { searchParams: Promis
     db.setting.findMany({ where: { key: { in: ["home", "banners", "seoPages"] } }, select: { updatedAt: true } }),
   ]);
   // One list: CMS pages, the Homepage (always live, edited on its own screen) and every service page.
-  const core = new Set<string>(CORE_SERVICE_SLUGS);
   type Row = { key: string; kind: "page" | "home" | "service"; id: number; title: string; path: string; status: "DRAFT" | "PUBLISHED"; updatedAt: Date; isSystem: boolean; tag?: string };
   const rows: Row[] = [
     ...pages.map((p): Row => ({ key: `p${p.id}`, kind: "page", id: p.id, title: p.title, path: `/${p.slug}`, status: p.status, updatedAt: p.updatedAt, isSystem: p.isSystem })),
     ...services
       .filter((x) => (!status || x.status === status) && textMatch(x.title, x.slug))
-      .map((x): Row => ({ key: `s${x.id}`, kind: "service", id: x.id, title: x.title, path: `/services/${x.slug}`, status: x.status, updatedAt: x.updatedAt, isSystem: false, tag: `${core.has(x.slug) ? "main service" : "additional service"} · ${x.category.name}` })),
+      .map((x): Row => ({ key: `s${x.id}`, kind: "service", id: x.id, title: x.title, path: `/services/${x.slug}`, status: x.status, updatedAt: x.updatedAt, isSystem: false, tag: `${x.isFeatured ? "main service" : "additional service"} · ${x.category.name}` })),
   ];
   if ((!status || status === "PUBLISHED") && textMatch("Home", "")) {
     const updatedAt = homeSettings.reduce((m, r) => (r.updatedAt > m ? r.updatedAt : m), new Date(0));
