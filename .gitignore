@@ -71,3 +71,39 @@ skills-lock.json
 
 # --- screenshot/dev build output ---
 .next-shot/
+
+# --- secrets, certificates, database dumps & backups (never commit) ---
+*.pfx
+*.crt
+*.cer
+*.der
+*.csr
+id_rsa*
+id_ed25519*
+*.p8
+*.sql.gz
+*.dump
+*.bak
+*.backup
+*.old
+*.sqlite
+*.sqlite3
+*.db
+/backup/
+/backups/
+/dumps/
+# loose SQL dumps are ignored, but Prisma migrations are source and must stay tracked
+*.sql
+!/prisma/migrations/**/*.sql
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# --- local debug output (root-level screenshots from scripts/shot.mjs) ---
+/shot-*.png
+
+# --- uploads ---
+# Admin uploads live in MySQL (Media + MediaBlob), not on disk, so there is no uploads folder to
+# ignore or protect. If a file-based upload dir is ever added (e.g. public/uploads), do NOT ignore it
+# blindly: it holds production data and must be kept out of the deploy's overwrite/clean step.
