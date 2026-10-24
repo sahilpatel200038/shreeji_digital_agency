@@ -5,8 +5,16 @@ export function sha256(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
+function getIpSalt(): string {
+  const salt = process.env.IP_HASH_SALT;
+  if (salt) return salt;
+  // A guessable salt makes the stored IP hashes reversible, so production must set a real one.
+  if (process.env.NODE_ENV === "production") throw new Error("IP_HASH_SALT must be set in production");
+  return "dev-salt";
+}
+
 export function hashIp(ip: string): string {
-  return sha256(`${process.env.IP_HASH_SALT ?? "dev-salt"}:${ip}`);
+  return sha256(`${getIpSalt()}:${ip}`);
 }
 
 export async function getClientMeta(): Promise<{ ipHash: string; userAgent: string }> {

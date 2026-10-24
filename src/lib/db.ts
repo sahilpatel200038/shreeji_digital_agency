@@ -1,7 +1,9 @@
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
+import { assertServerEnv } from "@/lib/env-check";
 
 function createClient() {
+  assertServerEnv();
   const raw = process.env.DATABASE_URL;
   if (!raw) throw new Error("DATABASE_URL is not set");
   const url = new URL(raw);
