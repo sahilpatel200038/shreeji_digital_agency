@@ -12,13 +12,6 @@ const nextConfig: NextConfig = {
     localPatterns: [{ pathname: "/media/**" }, { pathname: "/brand/**" }, { pathname: "/**" }],
   },
   serverExternalPackages: ["sharp"],
-  turbopack: {
-    rules: {
-      // Skip node_modules CSS (e.g. swiper): it has no Tailwind directives, and sending it through the loader
-      // spawns an extra node process per file, which crashed the build on constrained hosts.
-      "*.css": { condition: { not: "foreign" }, loaders: ["@tailwindcss/turbopack"], as: "*.css" },
-    },
-  },
   experimental: {
     serverActions: { bodySizeLimit: "6mb" },
     // Next keeps prefetched static pages in the visitor's browser for 5 minutes by default, so a visitor who is
