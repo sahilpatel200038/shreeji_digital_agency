@@ -13,6 +13,9 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ["sharp"],
   experimental: {
+    // The shared host caps threads/processes (build crashed with EAGAIN "can't spawn worker thread" at 61 workers),
+    // so keep the build's worker pool small. Slightly slower builds, but they finish.
+    cpus: 2,
     serverActions: { bodySizeLimit: "6mb" },
     // Next keeps prefetched static pages in the visitor's browser for 5 minutes by default, so a visitor who is
     // already browsing keeps seeing old content after an admin edit (the server has long since revalidated).
