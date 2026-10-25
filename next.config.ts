@@ -14,7 +14,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["sharp"],
   turbopack: {
     rules: {
-      "*.css": { loaders: ["@tailwindcss/turbopack"], as: "*.css" },
+      // Skip node_modules CSS (e.g. swiper): it has no Tailwind directives, and sending it through the loader
+      // spawns an extra node process per file, which crashed the build on constrained hosts.
+      "*.css": { condition: { not: "foreign" }, loaders: ["@tailwindcss/turbopack"], as: "*.css" },
     },
   },
   experimental: {
