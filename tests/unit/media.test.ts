@@ -39,3 +39,19 @@ describe("processImage (upload validation)", () => {
     expect(meta.exif).toBeUndefined();
   });
 });
+
+describe("processImage: AVIF", () => {
+  it("accepts a real AVIF (sharp reports the container as heif) and re-encodes to WebP", async () => {
+    const avif = await sharp({ create: { width: 40, height: 30, channels: 3, background: "#053620" } }).avif().toBuffer();
+    expect((await sharp(avif).metadata()).format).toBe("heif");
+    const r = await processImage(avif);
+    expect(r.mimeType).toBe("image/webp");
+    expect(r.width).toBe(40);
+  });
+
+  it("rejects HEIC (same container, HEVC codec)", async () => {
+    const heic = await sharp({ create: { width: 40, height: 30, channels: 3, background: "#053620" } }).heif({ compression: "hevc" }).toBuffer().catch(() => null);
+    if (!heic) return; // this sharp build cannot encode HEVC, so there is nothing to feed it
+    await expect(processImage(heic)).rejects.toThrow(/Unsupported/);
+  });
+});

@@ -24,6 +24,8 @@
 # --- Next.js build output ---
 /.next/
 /out/
+/.next-test/
+/.next-test2/
 /build
 # isolated build used by the Playwright suite (NEXT_DIST_DIR=.next-e2e)
 /.next-e2e/

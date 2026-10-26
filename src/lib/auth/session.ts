@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
 import { db } from "@/lib/db";
+import { classifyDbError } from "@/lib/db-errors";
 import { getAuthSecret } from "@/lib/env";
 import { getClientMeta } from "@/lib/crypto";
 import { can, type Permission, type Role } from "@/lib/auth/permissions";
@@ -51,7 +52,10 @@ export const getSession = cache(async (): Promise<SessionUser | null> => {
     const { isActive: _isActive, ...user } = session.user;
     void _isActive;
     return user;
-  } catch {
+  } catch (err) {
+    // A database outage must not look like "not signed in": callers would answer 401 / bounce to the login page and
+    // hide the real problem. A bad or expired token (the only other failure here) still just means "no session".
+    if (classifyDbError(err)) throw err;
     return null;
   }
 });

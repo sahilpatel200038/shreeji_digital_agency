@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import sharp, { type Metadata as SharpMetadata } from "sharp";
 
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+/** sharp format names. AVIF is detected separately in processImage because sharp reports it as "heif". */
 export const ALLOWED_FORMATS = ["jpeg", "png", "webp", "avif", "gif"] as const;
 
 export class MediaError extends Error {}
@@ -30,8 +31,11 @@ export async function processImage(input: Buffer): Promise<ProcessedImage> {
   } catch {
     throw new MediaError("This file is not a valid image.");
   }
-  if (!meta.format || !(ALLOWED_FORMATS as readonly string[]).includes(meta.format)) {
-    throw new MediaError("Unsupported file type. Use JPG, PNG, WebP, AVIF or GIF.");
+  // sharp reports AVIF files as "heif" (the container) with AV1 compression. HEIC (HEVC) shares the container but is
+  // not an allowed type, so the codec is checked too.
+  const isAvif = meta.format === "heif" && meta.compression === "av1";
+  if (!isAvif && (!meta.format || !(ALLOWED_FORMATS as readonly string[]).includes(meta.format))) {
+    throw new MediaError("Unsupported file type. Use JPG, PNG, WebP, AVIF or GIF (HEIC is not supported).");
   }
 
   const isGif = meta.format === "gif";

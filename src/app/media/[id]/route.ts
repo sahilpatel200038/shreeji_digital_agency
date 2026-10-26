@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { classifyDbError, scrub } from "@/lib/db-errors";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,8 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
     }
     return new Response(bytes, { headers: media.mimeType.startsWith("video/") ? { ...headers, "Accept-Ranges": "bytes" } : headers });
   } catch (err) {
-    console.error(JSON.stringify({ level: "error", msg: "media_serve_failed", error: String(err) }));
+    const failure = classifyDbError(err);
+    console.error(JSON.stringify({ level: "error", msg: "media_serve_failed", ...(failure ? { dbKind: failure.kind, dbCode: failure.code } : {}), error: scrub(String(err)) }));
     return new Response("Service unavailable", { status: 503 });
   }
 }

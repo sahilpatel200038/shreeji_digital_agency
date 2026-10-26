@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { withApiErrors } from "@/lib/api";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
@@ -7,6 +8,7 @@ import { saveMedia } from "@/lib/media/store";
 import { audit } from "@/lib/audit";
 import { revalidateSite } from "@/lib/action";
 import { hitRateLimit } from "@/lib/rate-limit";
+import { classifyDbError, dbFailureMessage, scrub } from "@/lib/db-errors";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +25,7 @@ function sameOrigin(request: Request): boolean {
   }
 }
 
-export async function GET(request: Request) {
+async function get_(request: Request) {
   const user = await getSession();
   if (!user) return json({ error: "Unauthorized" }, 401);
   if (!can(user.role, "media:write")) return json({ error: "Forbidden" }, 403);
@@ -33,14 +35,20 @@ export async function GET(request: Request) {
   const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
   const pageSize = 24;
   const where = { mimeType: { startsWith: "image/" }, ...(q ? { OR: [{ title: { contains: q } }, { fileName: { contains: q } }, { altText: { contains: q } }] } : {}) };
-  const [items, total] = await Promise.all([
-    db.media.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * pageSize, take: pageSize, select: { id: true, title: true, altText: true, checksum: true, width: true, height: true } }),
-    db.media.count({ where }),
-  ]);
-  return json({ items, page, pages: Math.max(1, Math.ceil(total / pageSize)) });
+  try {
+    const [items, total] = await Promise.all([
+      db.media.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * pageSize, take: pageSize, select: { id: true, title: true, altText: true, checksum: true, width: true, height: true } }),
+      db.media.count({ where }),
+    ]);
+    return json({ items, page, pages: Math.max(1, Math.ceil(total / pageSize)) });
+  } catch (err) {
+    const failure = classifyDbError(err);
+    console.error(JSON.stringify({ level: "error", msg: "media_list_failed", ...(failure ? { dbKind: failure.kind, dbCode: failure.code } : {}), error: scrub(String(err)) }));
+    return json({ error: failure ? dbFailureMessage(failure.kind) : "The media library could not be loaded." }, 503);
+  }
 }
 
-export async function POST(request: Request) {
+async function post_(request: Request) {
   if (!sameOrigin(request)) return json({ error: "Cross-site request blocked" }, 403);
   const user = await getSession();
   if (!user) return json({ error: "Unauthorized" }, 401);
@@ -73,11 +81,16 @@ export async function POST(request: Request) {
     } catch (err) {
       if (err instanceof MediaError) results.push({ name: file.name, ok: false, error: err.message });
       else {
-        console.error(JSON.stringify({ level: "error", msg: "upload_failed", error: String(err) }));
-        results.push({ name: file.name, ok: false, error: "Upload failed. Please try again." });
+        const failure = classifyDbError(err);
+        console.error(JSON.stringify({ level: "error", msg: "upload_failed", ...(failure ? { dbKind: failure.kind, dbCode: failure.code } : {}), error: scrub(String(err)) }));
+        results.push({ name: file.name, ok: false, error: failure ? dbFailureMessage(failure.kind) : "Upload failed. Please try again." });
       }
     }
   }
   revalidateSite();
   return json({ results }, results.some((r) => r.ok) ? 200 : 400);
 }
+
+export const GET = withApiErrors("media_get", get_);
+
+export const POST = withApiErrors("media_post", post_);

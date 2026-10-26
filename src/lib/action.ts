@@ -1,6 +1,7 @@
 import { unstable_rethrow } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { ZodError } from "zod";
+import { classifyDbError, dbFailureMessage, scrub } from "@/lib/db-errors";
 
 export type ActionResult<T = undefined> =
   | { ok: true; message?: string; data?: T }
@@ -31,13 +32,18 @@ export async function run<T = undefined>(fn: () => Promise<ActionResult<T>>): Pr
   } catch (err) {
     unstable_rethrow(err);
     if (err instanceof AppError) return { ok: false, error: err.message, fieldErrors: err.fieldErrors };
+    const db = classifyDbError(err);
     console.error(
       JSON.stringify({
         level: "error",
-        msg: "action_failed",
-        error: err instanceof Error ? err.message : String(err),
+        msg: db ? "action_failed_database" : "action_failed",
+        ...(db ? { dbKind: db.kind, dbCode: db.code } : {}),
+        errorName: err instanceof Error ? err.name : typeof err,
+        errorCode: (err as { code?: unknown } | null)?.code,
+        error: scrub(err instanceof Error ? err.message : String(err)),
       }),
     );
+    if (db) return { ok: false, error: dbFailureMessage(db.kind) };
     return { ok: false, error: "Something went wrong on our side. Please try again." };
   }
 }

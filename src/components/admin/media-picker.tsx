@@ -35,12 +35,15 @@ export function MediaPicker({
     setError(null);
     try {
       const res = await fetch(`/api/admin/media?page=${p}&q=${encodeURIComponent(query)}`, { cache: "no-store" });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
+      if (res.status === 401) throw new Error("Your session has expired. Please sign in again.");
+      if (res.status === 403) throw new Error("Your account does not have access to the media library.");
+      if (!res.ok || !data || !Array.isArray(data.items)) throw new Error(data?.error ?? "Could not load the media library. Please try again.");
       setItems(data.items);
       setPages(data.pages);
-    } catch {
-      setError("Could not load the media library. Please try again.");
+    } catch (err) {
+      // A TypeError here is the browser failing to reach the server at all (offline, blocked, DNS).
+      setError(err instanceof TypeError ? "Could not reach the server. Check your connection and try again." : err instanceof Error && err.message ? err.message : "Could not load the media library. Please try again.");
     } finally {
       setLoading(false);
     }

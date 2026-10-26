@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { withApiErrors } from "@/lib/api";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
@@ -57,7 +58,7 @@ async function setSlotUrl(slot: 0 | 1, url: string, userId: number) {
   if (oldId && !stillUsed) await db.media.deleteMany({ where: { id: oldId, folder: VIDEO_FOLDER } });
 }
 
-export async function POST(request: Request) {
+async function post_(request: Request) {
   const auth = await authorize(request);
   if (auth.error) return auth.error;
   const { user } = auth;
@@ -92,7 +93,7 @@ export async function POST(request: Request) {
 }
 
 /** Removes the uploaded video from one card (the card falls back to "coming soon"). */
-export async function DELETE(request: Request) {
+async function delete_(request: Request) {
   const auth = await authorize(request);
   if (auth.error) return auth.error;
   const slot = slotOf(new URL(request.url).searchParams.get("slot"));
@@ -107,3 +108,7 @@ export async function DELETE(request: Request) {
     return json({ error: "Could not remove the video. Please try again." }, 500);
   }
 }
+
+export const POST = withApiErrors("video_post", post_);
+
+export const DELETE = withApiErrors("video_delete", delete_);
