@@ -24,3 +24,12 @@ describe("classifyDbError: wrapped driver errors", () => {
     expect(classifyDbError(Object.assign(new Error("Table 'db.Media' doesn't exist"), { code: "P2039" }))?.kind).toBe("schema");
   });
 });
+
+describe("classifyDbError: hosting connection limits", () => {
+  it("recognises the shared-host hourly connection cap, even when wrapped in another code", () => {
+    const msg = "User 'u1' has exceeded the 'max_connections_per_hour' resource (current value: 500)";
+    expect(classifyDbError(new Error(msg))?.kind).toBe("limit");
+    expect(classifyDbError(Object.assign(new Error(msg), { code: "P2039" }))?.kind).toBe("limit");
+    expect(classifyDbError(Object.assign(new Error("x"), { code: "ER_USER_LIMIT_REACHED" }))?.kind).toBe("limit");
+  });
+});

@@ -13,7 +13,13 @@ function createClient() {
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
     database: url.pathname.replace(/^\//, ""),
-    connectionLimit: Number(process.env.DB_POOL_LIMIT ?? 5),
+    // Shared MySQL hosts cap how many connections a user may *open per hour* (Hostinger: 500), so connections are
+    // opened lazily and kept: a small pool, at most one idle connection kept warm, and idle ones recycled slowly.
+    connectionLimit: Number(process.env.DB_POOL_LIMIT ?? 4),
+    minimumIdle: 1,
+    idleTimeout: 600,
+    connectTimeout: 8_000,
+    acquireTimeout: 10_000,
     allowPublicKeyRetrieval: true,
   });
   return new PrismaClient({ adapter });
@@ -21,6 +27,6 @@ function createClient() {
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-export const db: PrismaClient = globalForPrisma.prisma ?? createClient();
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+// One client (one pool) per process in every mode. Without this, each bundled copy of this module in production
+// opened its own pool, multiplying connections and exhausting the host's hourly connection allowance.
+export const db: PrismaClient = globalForPrisma.prisma ?? (globalForPrisma.prisma = createClient());
