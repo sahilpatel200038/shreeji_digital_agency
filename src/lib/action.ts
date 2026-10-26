@@ -1,7 +1,8 @@
 import { unstable_rethrow } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { ZodError } from "zod";
-import { classifyDbError, dbFailureMessage, scrub } from "@/lib/db-errors";
+import { dbFailureMessage, scrub } from "@/lib/db-errors";
+import { refineDbFailure } from "@/lib/db-health";
 
 export type ActionResult<T = undefined> =
   | { ok: true; message?: string; data?: T }
@@ -32,7 +33,7 @@ export async function run<T = undefined>(fn: () => Promise<ActionResult<T>>): Pr
   } catch (err) {
     unstable_rethrow(err);
     if (err instanceof AppError) return { ok: false, error: err.message, fieldErrors: err.fieldErrors };
-    const db = classifyDbError(err);
+    const db = await refineDbFailure(err);
     console.error(
       JSON.stringify({
         level: "error",

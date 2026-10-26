@@ -4,6 +4,9 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { releaseAllFor } from "@/lib/edit-lock";
 import { db } from "@/lib/db";
+import { withDbRetry } from "@/lib/db-retry";
+import { dbFailureMessage } from "@/lib/db-errors";
+import { knownOutage } from "@/lib/db-health";
 import { AppError, run, type ActionResult } from "@/lib/action";
 import { verifyPassword } from "@/lib/auth/password";
 import { createSession, destroySession, getSession } from "@/lib/auth/session";
@@ -23,6 +26,11 @@ export async function login(_prev: unknown, formData: FormData): Promise<ActionR
     if (!parsed.success) throw new AppError("Enter a valid email and password.");
     const { email, password } = parsed.data;
 
+    // A probe confirmed the database is unreachable moments ago: say so now instead of making this visitor wait out the
+    // pool timeout (and adding yet another connection attempt to a database that is down or full).
+    const outage = knownOutage();
+    if (outage) throw new AppError(dbFailureMessage(outage.kind));
+
     const meta = await getClientMeta();
     const emailKey = `login:email:${sha256(email)}`;
     const [byIp, byEmail] = await Promise.all([
@@ -34,7 +42,7 @@ export async function login(_prev: unknown, formData: FormData): Promise<ActionR
       throw new AppError(`Too many sign-in attempts. Please try again in ${wait} minute(s).`);
     }
 
-    const user = await db.user.findUnique({ where: { email } });
+    const user = await withDbRetry(() => db.user.findUnique({ where: { email } }));
     const ok = await verifyPassword(password, user?.passwordHash);
     if (!user || !ok || !user.isActive) {
       await audit(user?.id ?? null, "login.failed", "user", user?.id ?? "", `Failed sign-in for ${email.slice(0, 80)}`);

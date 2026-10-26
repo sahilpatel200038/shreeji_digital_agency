@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
 import { db } from "@/lib/db";
+import { withDbRetry } from "@/lib/db-retry";
 import { classifyDbError } from "@/lib/db-errors";
 import { getAuthSecret } from "@/lib/env";
 import { getClientMeta } from "@/lib/crypto";
@@ -44,10 +45,12 @@ export const getSession = cache(async (): Promise<SessionUser | null> => {
     const { payload } = await jwtVerify(token, getAuthSecret(), { algorithms: ["HS256"] });
     const sid = typeof payload.sid === "string" ? payload.sid : null;
     if (!sid) return null;
-    const session = await db.session.findUnique({
-      where: { id: sid },
-      include: { user: { select: { id: true, email: true, name: true, role: true, isActive: true } } },
-    });
+    const session = await withDbRetry(() =>
+      db.session.findUnique({
+        where: { id: sid },
+        include: { user: { select: { id: true, email: true, name: true, role: true, isActive: true } } },
+      }),
+    );
     if (!session || session.expiresAt < new Date() || !session.user.isActive) return null;
     const { isActive: _isActive, ...user } = session.user;
     void _isActive;

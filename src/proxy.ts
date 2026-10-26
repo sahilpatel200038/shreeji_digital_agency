@@ -25,6 +25,9 @@ async function getRules(): Promise<Map<string, Rule>> {
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
+  // Health probes must not depend on (or add to) the redirect-table query below.
+  if (pathname === "/api/health") return NextResponse.next();
+
   if (pathname.startsWith("/admin")) {
     // Optimistic gate only. Real authorisation happens server-side in every page and action.
     if (!pathname.startsWith("/admin/login") && !request.cookies.get(SESSION_COOKIE)) {
