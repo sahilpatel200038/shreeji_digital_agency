@@ -6,6 +6,7 @@ import { HOME_SECTION_FLAGS } from "@/lib/settings/forms";
 import { siteUrl } from "@/lib/env";
 import { AdminForm, CheckboxField, TextArea, TextInput } from "@/components/admin/admin-form";
 import { MediaPicker } from "@/components/admin/media-picker";
+import { VideoCardField } from "@/components/admin/video-card-field";
 import { SeoPanel } from "@/components/admin/seo-panel";
 import { Card, LinkButton, PageHeader } from "@/components/admin/ui";
 import { saveHomePage } from "@/actions/site-content";
@@ -126,7 +127,7 @@ export default async function HomePageEditor() {
           </Card>
 
           <Card title="Work videos (2 cards)">
-            <p className="mb-3 text-sm text-muted">Paste an https:// YouTube or Vimeo link, or a direct .mp4/.webm file. Leave a link empty to show a “coming soon” card.</p>
+            <p className="mb-3 text-sm text-muted">Upload one video per card (MP4 or WebM), or paste an https:// YouTube or Vimeo link. Leave a card empty to show a “coming soon” card.</p>
             <div className="grid gap-4 md:grid-cols-3">
               <TextInput label="Label" name="videosEyebrow" defaultValue={home.videosEyebrow} maxLength={60} />
               <TextInput label="Heading" name="videosTitle" defaultValue={home.videosTitle} maxLength={120} />
@@ -137,7 +138,7 @@ export default async function HomePageEditor() {
                 <div key={i} className="grid gap-3 md:grid-cols-3">
                   <TextInput label={`Video ${i + 1} title`} name={`video_title_${i}`} defaultValue={v?.title} maxLength={80} />
                   <TextInput label={`Video ${i + 1} description`} name={`video_text_${i}`} defaultValue={v?.text} maxLength={200} />
-                  <TextInput label={`Video ${i + 1} link`} name={`video_url_${i}`} defaultValue={v?.url} maxLength={500} placeholder="https://www.youtube.com/watch?v=..." />
+                  <VideoCardField slot={i as 0 | 1} label={`Video ${i + 1}`} defaultUrl={v?.url ?? ""} />
                 </div>
               ))}
             </div>

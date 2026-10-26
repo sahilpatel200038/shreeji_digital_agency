@@ -14,7 +14,7 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
   const page = Math.max(1, Number(sp.page) || 1);
   const q = sp.q?.trim().slice(0, 80);
   const folder = sp.folder?.replace(/[^a-z0-9-_]/gi, "").slice(0, 80) || undefined;
-  const where = { ...(folder ? { folder } : {}), ...(q ? { OR: [{ title: { contains: q } }, { fileName: { contains: q } }, { altText: { contains: q } }] } : {}) };
+  const where = { mimeType: { startsWith: "image/" }, ...(folder ? { folder } : {}), ...(q ? { OR: [{ title: { contains: q } }, { fileName: { contains: q } }, { altText: { contains: q } }] } : {}) };
   const [items, total, folders] = await Promise.all([
     db.media.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE }),
     db.media.count({ where }),

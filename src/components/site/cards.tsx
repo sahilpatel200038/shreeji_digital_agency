@@ -18,7 +18,7 @@ export function ServiceCard({ slug, title, summary, icon, featuredMedia }: { slu
             src={`/media/${featuredMedia.id}${featuredMedia.checksum ? `?v=${featuredMedia.checksum.slice(0, 8)}` : ""}`}
             alt={featuredMedia.altText || ""}
             fill
-            sizes="(min-width: 1024px) 280px, (min-width: 640px) 45vw, 90vw"
+            sizes="(min-width: 1024px) 400px, (min-width: 640px) 45vw, 90vw"
             className="object-cover transition duration-500 group-hover:scale-105"
           />
         ) : (

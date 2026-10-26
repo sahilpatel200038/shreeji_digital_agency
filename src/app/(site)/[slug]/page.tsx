@@ -6,7 +6,7 @@ import { findRedirect, getBannerMedia, getPageBySlug, getTeamMembers } from "@/l
 import { getSettings } from "@/lib/settings/get";
 import { bannerKeyForSlug, resolveBanner } from "@/lib/banner";
 import { organizationSchema, webPageSchema } from "@/lib/seo/schema";
-import { PageHero } from "@/components/ui/breadcrumbs";
+import { HeroActions, PageHero } from "@/components/ui/breadcrumbs";
 import { Section } from "@/components/ui/layout";
 import { JsonLd } from "@/components/ui/json-ld";
 import { ServicesSliderSection, WorkSliderSection } from "@/components/site/slider-sections";
@@ -61,7 +61,14 @@ export default async function CmsPage({ params }: Props) {
     <>
       <JsonLd data={webPageSchema(schemaType, page.title, path)} />
       {isContact && <JsonLd data={organizationSchema(settings, settings.seo.ogMediaId)} />}
-      <PageHero eyebrow={isContact ? settings.contact.pageEyebrow : page.slug === "about" ? settings.banners.aboutEyebrow : undefined} title={page.title} intro={page.excerpt ?? undefined} image={resolveBanner(bannerKeyForSlug(page.slug), page.featuredMedia, page.title)} />
+      <PageHero eyebrow={isContact ? settings.contact.pageEyebrow : page.slug === "about" ? settings.banners.aboutEyebrow : undefined} title={page.title} intro={page.excerpt ?? undefined} image={resolveBanner(bannerKeyForSlug(page.slug), page.featuredMedia, page.title)}>
+        {(isContact || page.slug === "about") && (
+          <HeroActions
+            primary={isContact ? { label: "Send a Message", href: "#contact" } : { label: settings.home.ctaPrimaryLabel || "Start Your Journey", href: settings.home.ctaPrimaryHref || "/contact" }}
+            secondary={{ label: "Our Services", href: "/services" }}
+          />
+        )}
+      </PageHero>
 
       {page.slug === "about" ? (
         <>

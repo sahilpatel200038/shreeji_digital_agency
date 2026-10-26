@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { processImage, type ProcessedImage } from "@/lib/media/process";
+import { VIDEO_FOLDER, type CheckedVideo } from "@/lib/media/video";
 
 export type NewMediaInput = {
   fileName: string;
@@ -29,6 +30,27 @@ export async function saveMedia(input: Buffer, meta: NewMediaInput, processed?: 
       },
     });
     await tx.mediaBlob.create({ data: { mediaId: media.id, data: new Uint8Array(img.data) } });
+    return media;
+  });
+}
+
+/** Stores an already-validated video (see checkVideo). */
+export async function saveVideoMedia(video: CheckedVideo, meta: { fileName: string; title?: string; uploadedById?: number | null }) {
+  const baseName = meta.fileName.replace(/[^\w.\- ]+/g, "_").slice(0, 200) || "video";
+  return db.$transaction(async (tx) => {
+    const media = await tx.media.create({
+      data: {
+        fileName: baseName,
+        title: (meta.title ?? baseName.replace(/\.[^.]+$/, "")).slice(0, 255),
+        altText: "",
+        mimeType: video.mimeType,
+        sizeBytes: video.sizeBytes,
+        folder: VIDEO_FOLDER,
+        checksum: video.checksum,
+        uploadedById: meta.uploadedById ?? null,
+      },
+    });
+    await tx.mediaBlob.create({ data: { mediaId: media.id, data: new Uint8Array(video.data) } });
     return media;
   });
 }

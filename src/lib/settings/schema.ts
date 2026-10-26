@@ -87,7 +87,7 @@ const videoUrl = z
   .trim()
   .max(500)
   .default("")
-  .refine((v) => v === "" || parseVideoUrl(v) !== null, "Use an https:// YouTube or Vimeo link, or a direct .mp4/.webm file");
+  .refine((v) => v === "" || parseVideoUrl(v) !== null, "Use an https:// YouTube or Vimeo link, a direct .mp4/.webm file, or an uploaded video");
 
 export const DEFAULT_VIDEOS = [
   { title: "Project walkthrough", text: "A look at how we plan and deliver a campaign for our clients.", url: "" },

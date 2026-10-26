@@ -5,7 +5,7 @@ import { getBannerMedia, getCoreServices, getServicesGrouped } from "@/lib/data/
 import { getSettings } from "@/lib/settings/get";
 import { resolveBanner } from "@/lib/banner";
 import { itemListSchema } from "@/lib/seo/schema";
-import { PageHero } from "@/components/ui/breadcrumbs";
+import { HeroActions, PageHero } from "@/components/ui/breadcrumbs";
 import { Section, SectionHeading } from "@/components/ui/layout";
 import { JsonLd } from "@/components/ui/json-ld";
 import { Stagger, StaggerItem } from "@/components/motion/reveal";
@@ -34,7 +34,12 @@ export default async function ServicesPage() {
         title={settings.banners.servicesTitle}
         intro={settings.banners.servicesText}
         image={resolveBanner("services", banner)}
-      />
+      >
+        <HeroActions
+          primary={{ label: settings.home.ctaPrimaryLabel || "Start Your Journey", href: settings.home.ctaPrimaryHref || "/contact" }}
+          secondary={{ label: settings.home.ctaSecondaryLabel || "View Our Work", href: "/#work" }}
+        />
+      </PageHero>
       <Section labelledBy="core-title">
         {all.length === 0 && <EmptyState title="Services are coming soon" text="Please check back shortly or contact us directly." />}
         {core.length > 0 && (

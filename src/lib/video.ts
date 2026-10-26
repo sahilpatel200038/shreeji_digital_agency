@@ -3,10 +3,15 @@ export type VideoSource =
   | { kind: "vimeo"; id: string; embedUrl: string; thumbnail: null }
   | { kind: "file"; src: string; thumbnail: null };
 
+/** `/media/<id>` with the optional cache-busting `?v=` the media helpers add. */
+const UPLOADED_VIDEO = /^\/media\/\d+(\?v=[0-9a-f]{1,16})?$/;
+
 const YT_ID = /^[\w-]{11}$/;
 
 /** Turns a pasted https:// video link into something the player can use. Returns null for anything unsupported. */
 export function parseVideoUrl(value: string): VideoSource | null {
+  // A video uploaded in Admin is served by our own media route.
+  if (UPLOADED_VIDEO.test(value.trim())) return { kind: "file", src: value.trim(), thumbnail: null };
   let u: URL;
   try {
     u = new URL(value.trim());
@@ -35,4 +40,10 @@ export function parseVideoUrl(value: string): VideoSource | null {
   }
   if (/\.(mp4|webm|ogg)$/i.test(u.pathname)) return { kind: "file", src: u.toString(), thumbnail: null };
   return null;
+}
+
+/** The media id behind an uploaded-video link, or null for YouTube/Vimeo/external links. */
+export function uploadedVideoId(value: string): number | null {
+  const m = /^\/media\/(\d+)/.exec(value.trim());
+  return m && UPLOADED_VIDEO.test(value.trim()) ? Number(m[1]) : null;
 }

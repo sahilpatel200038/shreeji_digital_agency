@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   const q = (url.searchParams.get("q") ?? "").trim().slice(0, 80);
   const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
   const pageSize = 24;
-  const where = q ? { OR: [{ title: { contains: q } }, { fileName: { contains: q } }, { altText: { contains: q } }] } : {};
+  const where = { mimeType: { startsWith: "image/" }, ...(q ? { OR: [{ title: { contains: q } }, { fileName: { contains: q } }, { altText: { contains: q } }] } : {}) };
   const [items, total] = await Promise.all([
     db.media.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * pageSize, take: pageSize, select: { id: true, title: true, altText: true, checksum: true, width: true, height: true } }),
     db.media.count({ where }),

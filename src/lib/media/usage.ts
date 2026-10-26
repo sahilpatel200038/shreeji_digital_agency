@@ -1,9 +1,10 @@
 import { db } from "@/lib/db";
+import { uploadedVideoId } from "@/lib/video";
 import { mediaIdsInBlocks, parseBlocks } from "@/lib/blocks/schema";
 
 /** Everywhere a media item is referenced. Used to refuse unsafe deletion. */
 export async function findMediaUsage(id: number): Promise<string[]> {
-  const [pages, posts, services, projects, seos, settings, bannerSetting, blockPages, blockPosts, blockServices] = await Promise.all([
+  const [pages, posts, services, projects, seos, settings, bannerSetting, homeSetting, blockPages, blockPosts, blockServices] = await Promise.all([
     db.page.findMany({ where: { featuredMediaId: id }, select: { title: true } }),
     db.post.findMany({ where: { featuredMediaId: id }, select: { title: true } }),
     db.service.findMany({ where: { featuredMediaId: id }, select: { title: true } }),
@@ -11,6 +12,7 @@ export async function findMediaUsage(id: number): Promise<string[]> {
     db.seoMeta.count({ where: { ogMediaId: id } }),
     db.setting.findUnique({ where: { key: "seo" } }),
     db.setting.findUnique({ where: { key: "banners" } }),
+    db.setting.findUnique({ where: { key: "home" } }),
     db.page.findMany({ select: { title: true, blocks: true } }),
     db.post.findMany({ select: { title: true, blocks: true } }),
     db.service.findMany({ select: { title: true, blocks: true } }),
@@ -25,6 +27,10 @@ export async function findMediaUsage(id: number): Promise<string[]> {
   for (const [k, label] of [["home", "Homepage"], ["services", "Services page"], ["blog", "Blog page"], ["faq", "FAQ page"]] as const) {
     if (banners[k] === id) used.push(`${label} banner image`);
   }
+  const homeVideos = ((homeSetting?.value ?? {}) as { videos?: { url?: string }[] }).videos ?? [];
+  homeVideos.forEach((v, i) => {
+    if (uploadedVideoId(v.url ?? "") === id) used.push(`Homepage work video ${i + 1}`);
+  });
   if ((settings?.value as { ogMediaId?: number } | null)?.ogMediaId === id) used.push("Site default social image");
   const inBlocks = (rows: { title: string; blocks: unknown }[], kind: string) =>
     rows.forEach((r) => {

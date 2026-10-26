@@ -20,6 +20,9 @@ Files were resized to 1200px wide and recompressed. Photo IDs (`https://unsplash
 | creative-production.jpg | 1516035069371-29a1b244cc32 |
 | analytics-insights.jpg | 1504868584819-f8e8b4b6d7e3 |
 | lead-generation.jpg | 1542744173-8e7e53415bb0 |
+| app-development-design.jpg | 1551650975-87deedd944c3 |
+| whatsapp-marketing.jpg | 1611746872915-64382b5c76da |
+| google-business-profile-optimization.jpg | 1556742049-0cfed4f6a45d |
 | web-hosting.jpg | 1486312338219-ce68d2c6f44d |
 | ui-ux-graphics-design.jpg | 1581291518857-4e27b48ff24e |
 

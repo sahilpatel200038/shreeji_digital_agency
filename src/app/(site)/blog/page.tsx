@@ -7,7 +7,7 @@ import { getSettings } from "@/lib/settings/get";
 import { resolveBanner } from "@/lib/banner";
 import { AutoFilterForm } from "@/components/ui/auto-filter-form";
 import { ServicesSliderSection } from "@/components/site/slider-sections";
-import { PageHero } from "@/components/ui/breadcrumbs";
+import { HeroActions, PageHero } from "@/components/ui/breadcrumbs";
 import { Section } from "@/components/ui/layout";
 import { EmptyState } from "@/components/ui/skeleton";
 import { Pagination } from "@/components/ui/pagination";
@@ -37,7 +37,12 @@ export default async function BlogPage({ searchParams }: Props) {
 
   return (
     <>
-      <PageHero eyebrow={settings.banners.blogEyebrow} title={settings.banners.blogTitle} intro={settings.banners.blogText} crumbs={[{ name: "Blog", path: "/blog" }]} image={resolveBanner("blog", banner)} />
+      <PageHero eyebrow={settings.banners.blogEyebrow} title={settings.banners.blogTitle} intro={settings.banners.blogText} crumbs={[{ name: "Blog", path: "/blog" }]} image={resolveBanner("blog", banner)}>
+        <HeroActions
+          primary={{ label: settings.home.ctaPrimaryLabel || "Start Your Journey", href: settings.home.ctaPrimaryHref || "/contact" }}
+          secondary={{ label: "Our Services", href: "/services" }}
+        />
+      </PageHero>
       <Section>
         <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <nav aria-label="Blog categories" className="flex flex-wrap gap-3">

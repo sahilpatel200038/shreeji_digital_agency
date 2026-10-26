@@ -13,6 +13,46 @@ type NavChild = { label: string; href: string; openInNewTab: boolean };
 type NavItem = NavChild & { children: NavChild[] };
 type ServiceGroup = { name: string; services: { slug: string; title: string }[] };
 
+/** Full-width row that expands/collapses its panel; a button, so it never navigates and works by touch and keyboard. */
+function AccordionToggle({ id, label, expanded, onToggle, className }: { id: string; label: string; expanded: boolean; onToggle: () => void; className?: string }) {
+  return (
+    <button
+      type="button"
+      id={`${id}-btn`}
+      aria-expanded={expanded}
+      aria-controls={`${id}-panel`}
+      onClick={onToggle}
+      className={cn("flex w-full items-center justify-between gap-3 rounded-md text-left", className)}
+    >
+      <span>{label}</span>
+      <Icon name="chevron-down" size={20} className={cn("shrink-0 transition-transform duration-300", expanded && "rotate-180")} />
+    </button>
+  );
+}
+
+/** Height-animated panel. Collapsed content is unmounted, so its links leave the tab order. */
+function AccordionPanel({ id, expanded, children }: { id: string; expanded: boolean; children: React.ReactNode }) {
+  return (
+    <AnimatePresence initial={false}>
+      {expanded && (
+        <motion.div
+          key="panel"
+          id={`${id}-panel`}
+          role="region"
+          aria-labelledby={`${id}-btn`}
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.25, ease: "easeInOut" }}
+          className="overflow-hidden"
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -40,6 +80,8 @@ export function HeaderNav({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  // Open accordion sections in the mobile menu (keys: a parent's href, or "<href>:<group name>" for nested groups).
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   // After a click in a desktop dropdown it stays hidden until the pointer leaves (hover/focus would keep it open).
   const [dropdownsHidden, setDropdownsHidden] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -56,8 +98,17 @@ export function HeaderNav({
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpen(false);
+    setExpanded(new Set());
     if (!window.location.hash) window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, [pathname]);
+
+  function toggle(key: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
+  }
 
   /** Any menu link click: close the menu/dropdown now, and jump to the top if it points at the current page. */
   function onNavigate(href: string) {
@@ -101,9 +152,15 @@ export function HeaderNav({
     <header
       className={cn(
         "sticky top-0 z-50 border-b transition-all duration-300",
-        scrolled ? "border-line bg-paper/90 shadow-sm backdrop-blur-md" : "border-transparent bg-paper/80 backdrop-blur-sm",
+        scrolled ? "border-line shadow-sm" : "border-transparent",
       )}
     >
+      {/* The blur lives on its own layer: backdrop-filter on <header> would make it the containing block of the
+          fixed mobile panel below and collapse that panel to the header's height. */}
+      <div
+        aria-hidden="true"
+        className={cn("pointer-events-none absolute inset-0 -z-10 transition-all duration-300", scrolled ? "bg-paper/90 backdrop-blur-md" : "bg-paper/80 backdrop-blur-sm")}
+      />
       <div className="container">
       <div className="row flex h-[72px] items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-3" aria-label={`${siteName} home`}>
@@ -214,7 +271,10 @@ export function HeaderNav({
             aria-expanded={open}
             aria-controls="mobile-nav"
             aria-label={open ? "Close menu" : "Open menu"}
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => {
+              if (open) setExpanded(new Set());
+              setOpen(!open);
+            }}
           >
             <Icon name={open ? "x" : "menu"} />
           </button>
@@ -237,44 +297,66 @@ export function HeaderNav({
               <ul className="divide-y divide-line">
                 {items.map((item) => {
                   const active = isActive(pathname, item.href);
+                  const isServices = item.href === "/services" && groups.length > 0;
+                  const hasSub = isServices || item.children.length > 0;
+                  const link = (href: string, label: string, className: string) => (
+                    <Link href={href} onClick={() => onNavigate(href)} className={className}>
+                      {label}
+                    </Link>
+                  );
+                  const subLink = "block rounded-md py-2 text-base text-muted hover:text-bronze-700";
                   return (
                     <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        onClick={() => onNavigate(item.href)}
-                        aria-current={active ? "page" : undefined}
-                        className={cn("flex min-h-12 items-center py-3 text-lg font-semibold", active ? "text-bronze-700" : "text-forest-900")}
-                      >
-                        {item.label}
-                      </Link>
-                      {item.href !== "/services" && item.children.length > 0 && (
-                        <ul className="mb-3 ml-3 space-y-1 border-l-2 border-bronze-300 pl-4">
-                          {item.children.map((c) => (
-                            <li key={c.href}>
-                              <Link href={c.href} onClick={() => onNavigate(c.href)} className="block py-1.5 text-base text-muted hover:text-bronze-700">
-                                {c.label}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      {item.href === "/services" && groups.length > 0 && (
-                        <ul className="mb-3 ml-3 space-y-1 border-l-2 border-bronze-300 pl-4">
-                          {groups.flatMap((g) => g.services).map((s) => (
-                            <li key={s.slug}>
-                              <Link href={`/services/${s.slug}`} onClick={() => onNavigate(`/services/${s.slug}`)} className="block py-1.5 text-base text-muted hover:text-bronze-700">
-                                {s.title}
-                              </Link>
-                            </li>
-                          ))}
-                          {item.children.map((c) => (
-                            <li key={`${c.href}-${c.label}`}>
-                              <Link href={c.href} onClick={() => onNavigate(c.href)} className="block py-1.5 text-base text-muted hover:text-bronze-700">
-                                {c.label}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
+                      {hasSub ? (
+                        <>
+                          <AccordionToggle
+                            id={`m-${item.href}`}
+                            label={item.label}
+                            expanded={expanded.has(item.href)}
+                            onToggle={() => toggle(item.href)}
+                            className={cn("min-h-12 py-3 text-lg font-semibold", active ? "text-bronze-700" : "text-forest-900")}
+                          />
+                          <AccordionPanel id={`m-${item.href}`} expanded={expanded.has(item.href)}>
+                            <ul className="mb-3 ml-3 space-y-0.5 border-l-2 border-bronze-300 pl-4">
+                              <li>{link(item.href, `All ${item.label}`, cn(subLink, "font-semibold text-forest-900"))}</li>
+                              {isServices
+                                ? groups.map((g) => {
+                                    const key = `${item.href}:${g.name}`;
+                                    return (
+                                      <li key={g.name}>
+                                        <AccordionToggle
+                                          id={`m-${key}`}
+                                          label={g.name}
+                                          expanded={expanded.has(key)}
+                                          onToggle={() => toggle(key)}
+                                          className="min-h-11 py-2 text-base font-semibold text-forest-900"
+                                        />
+                                        <AccordionPanel id={`m-${key}`} expanded={expanded.has(key)}>
+                                          <ul className="mb-2 ml-3 space-y-0.5 border-l-2 border-line pl-4">
+                                            {g.services.map((s) => (
+                                              <li key={s.slug}>{link(`/services/${s.slug}`, s.title, subLink)}</li>
+                                            ))}
+                                          </ul>
+                                        </AccordionPanel>
+                                      </li>
+                                    );
+                                  })
+                                : null}
+                              {item.children.map((c) => (
+                                <li key={`${c.href}-${c.label}`}>{link(c.href, c.label, subLink)}</li>
+                              ))}
+                            </ul>
+                          </AccordionPanel>
+                        </>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          onClick={() => onNavigate(item.href)}
+                          aria-current={active ? "page" : undefined}
+                          className={cn("flex min-h-12 items-center py-3 text-lg font-semibold", active ? "text-bronze-700" : "text-forest-900")}
+                        >
+                          {item.label}
+                        </Link>
                       )}
                     </li>
                   );

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Banner } from "@/components/ui/layout";
+import { ButtonLink } from "@/components/ui/button";
 import { JsonLd } from "@/components/ui/json-ld";
 import { BannerImage } from "@/components/ui/banner-image";
 import { breadcrumbSchema } from "@/lib/seo/schema";
@@ -43,6 +44,20 @@ export function Breadcrumbs({ items, tone = "dark" }: { items: Crumb[]; tone?: "
  * picture panel. Breadcrumbs are shown only when `crumbs` is passed, which only the blog pages do.
  * No entrance animation here: a banner that fades in again on every route change reads as flicker.
  */
+/** Banner buttons, styled exactly like the homepage hero (accent + light, large). */
+export function HeroActions({ primary, secondary }: { primary: { label: string; href: string; arrow?: boolean }; secondary: { label: string; href: string } }) {
+  return (
+    <>
+      <ButtonLink href={primary.href} variant="accent" size="lg" arrow={primary.arrow ?? true}>
+        {primary.label}
+      </ButtonLink>
+      <ButtonLink href={secondary.href} variant="light" size="lg">
+        {secondary.label}
+      </ButtonLink>
+    </>
+  );
+}
+
 export function PageHero({
   title,
   intro,
@@ -69,7 +84,7 @@ export function PageHero({
           </p>
         )}
         {/* Short titles use the homepage headline size; long ones (articles, service headlines) step down so they stay readable. */}
-        <h1 className={cn(title.length <= 32 ? "t-display" : "t-h1", "!text-white")}>{title}</h1>
+        <h1 className={cn(title.length <= 32 ? "t-h1" : "t-h1", "!text-white")}>{title}</h1>
         {intro && <p className="mt-6 max-w-xl text-lg text-white/80 md:text-xl">{intro}</p>}
         {children && <div className="mt-9 flex flex-wrap gap-4">{children}</div>}
       </div>
