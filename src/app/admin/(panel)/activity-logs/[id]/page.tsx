@@ -52,7 +52,7 @@ export default async function ActivityDetailPage({ params, searchParams }: { par
 
   return (
     <>
-      <PageHeader title={`Activity #${log.id}`} description={log.summary || undefined} actions={<Link href={`/admin/activity-logs${back.toString() ? `?${back}` : ""}`} className="font-semibold text-bronze-700 underline underline-offset-4">← Back to Activity Logs</Link>} />
+      <PageHeader backHref={`/admin/activity-logs${back.toString() ? `?${back}` : ""}`} backLabel="Back to Activity Logs" title={`Activity #${log.id}`} description={log.summary || undefined} />
       <Card>
         <dl className="divide-y divide-line">
           {rows.map(([k, v]) => (

@@ -3,6 +3,7 @@ import { AppError } from "@/lib/action";
 import { isValidSlug, RESERVED_SLUGS, slugify } from "@/lib/slug";
 import { blocksSchema, type Block } from "@/lib/blocks/schema";
 import { fieldErrorsFrom } from "@/lib/action";
+import { sanitizeRichText } from "@/lib/rich-text";
 
 export type SlugModel = "page" | "post" | "service" | "project";
 
@@ -45,7 +46,8 @@ export function parseBlocksField(raw: FormDataEntryValue | null): Block[] {
     const idx = typeof first?.path[0] === "number" ? first.path[0] + 1 : null;
     throw new AppError(idx ? `Block ${idx} needs attention: ${first.message}` : "Some content blocks are incomplete.", { blocks: Object.values(fe).flat().slice(0, 3) });
   }
-  return parsed.data;
+  // Rich text is sanitised on the way in as well as on render, so unsafe markup is never stored.
+  return parsed.data.map((b) => (b.type === "richtext" ? { ...b, html: sanitizeRichText(b.html) } : b));
 }
 
 /** Parse "A | B" per-line repeaters used in service editors. */

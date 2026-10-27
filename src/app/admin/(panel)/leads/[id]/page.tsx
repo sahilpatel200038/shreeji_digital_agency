@@ -21,7 +21,7 @@ export default async function LeadDetail({ params, searchParams }: { params: Pro
 
   return (
     <>
-      <PageHeader title={`${lead.firstName} ${lead.lastName}`} description={`Received ${formatDate(lead.createdAt, when)}`} actions={<StatusBadge status={lead.status} />} />
+      <PageHeader backHref="/admin/leads" title={`${lead.firstName} ${lead.lastName}`} description={`Received ${formatDate(lead.createdAt, when)}`} actions={<StatusBadge status={lead.status} />} />
       <Flash params={await searchParams} />
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-6">

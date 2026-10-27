@@ -89,7 +89,7 @@ test.describe("authorization is enforced server-side (not just hidden in the UI)
     // A forged Server Action POST without a valid session must not mutate anything.
     const before = await query<{ n: number }>("SELECT COUNT(*) n FROM Page");
     const res = await request.post("/admin/pages/new", {
-      headers: { "next-action": "00deadbeef00deadbeef00deadbeef00deadbeef00", "content-type": "text/plain;charset=UTF-8", origin: "http://localhost:3100" },
+      headers: { "next-action": "00deadbeef00deadbeef00deadbeef00deadbeef00", "content-type": "text/plain;charset=UTF-8", origin: process.env.BASE_URL ?? "http://localhost:3100" },
       data: '["$undefined",{"title":"hacked"}]',
       maxRedirects: 0,
     });

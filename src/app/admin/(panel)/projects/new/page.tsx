@@ -6,7 +6,7 @@ export default async function NewProject() {
   await requirePagePermission("content:write");
   return (
     <>
-      <PageHeader title="New project" />
+      <PageHeader backHref="/admin/projects" title="New project" />
       <ProjectEditor project={null} />
     </>
   );

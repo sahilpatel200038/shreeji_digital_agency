@@ -13,7 +13,7 @@ export default async function EditFaq({ params, searchParams }: { params: Promis
   if (!f || f.serviceId) notFound();
   return (
     <>
-      <PageHeader title="Edit FAQ" />
+      <PageHeader backHref="/admin/faqs" title="Edit FAQ" />
       <Flash params={await searchParams} />
       <FaqEditor f={f} />
     </>

@@ -6,7 +6,7 @@ export default async function NewService() {
   await requirePagePermission("content:write");
   return (
     <>
-      <PageHeader title="New service" />
+      <PageHeader backHref="/admin/services" title="New service" />
       <ServiceEditor service={null} />
     </>
   );

@@ -121,6 +121,7 @@ model Media {
   blob        MediaBlob?
   pages       Page[]
   posts       Post[]
+  postThumbs  Post[]       @relation("PostThumbnail")
   services    Service[]
   projects    Project[]
   teamMembers TeamMember[]
@@ -245,31 +246,34 @@ model PostTag {
 }
 
 model Post {
-  id              Int           @id @default(autoincrement())
-  title           String        @db.VarChar(190)
-  slug            String        @unique @db.VarChar(160)
-  excerpt         String?       @db.Text
-  blocks          Json
-  featuredMediaId Int?
-  authorId        Int
-  categoryId      Int?
-  status          PublishStatus @default(DRAFT)
-  publishedAt     DateTime?
-  readingMinutes  Int           @default(1)
-  seoId           Int?          @unique
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id               Int           @id @default(autoincrement())
+  title            String        @db.VarChar(190)
+  slug             String        @unique @db.VarChar(160)
+  excerpt          String?       @db.Text
+  blocks           Json
+  featuredMediaId  Int?
+  thumbnailMediaId Int?
+  authorId         Int
+  categoryId       Int?
+  status           PublishStatus @default(DRAFT)
+  publishedAt      DateTime?
+  readingMinutes   Int           @default(1)
+  seoId            Int?          @unique
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
-  author        User          @relation(fields: [authorId], references: [id], onDelete: Restrict)
-  category      PostCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  featuredMedia Media?        @relation(fields: [featuredMediaId], references: [id], onDelete: SetNull)
-  seo           SeoMeta?      @relation(fields: [seoId], references: [id], onDelete: SetNull)
-  tags          PostTag[]
+  author         User          @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  category       PostCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  featuredMedia  Media?        @relation(fields: [featuredMediaId], references: [id], onDelete: SetNull)
+  thumbnailMedia Media?        @relation("PostThumbnail", fields: [thumbnailMediaId], references: [id], onDelete: SetNull)
+  seo            SeoMeta?      @relation(fields: [seoId], references: [id], onDelete: SetNull)
+  tags           PostTag[]
 
   @@index([status, publishedAt])
   @@index([categoryId])
   @@index([authorId])
   @@index([featuredMediaId])
+  @@index([thumbnailMediaId])
 }
 
 model Menu {

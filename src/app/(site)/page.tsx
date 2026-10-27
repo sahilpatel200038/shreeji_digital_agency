@@ -61,7 +61,7 @@ export default async function HomePage() {
               <HeroText text={home.headline} />
             </h1>
             <Reveal delay={0.35}>
-              <p className="mt-6 max-w-xl text-lg text-white/80 md:text-xl">{home.subheadline}</p>
+              <p className="t-hero-lead mt-5 max-w-xl text-white/80 md:mt-6">{home.subheadline}</p>
               <div className="mt-9 flex flex-wrap gap-4">
                 {home.ctaPrimaryLabel && (
                   <ButtonLink href={home.ctaPrimaryHref || "/contact"} variant="accent" size="lg" arrow>

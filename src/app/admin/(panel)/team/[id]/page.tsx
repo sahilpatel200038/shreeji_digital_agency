@@ -13,7 +13,7 @@ export default async function EditTeamMember({ params, searchParams }: { params:
   if (!member) notFound();
   return (
     <>
-      <PageHeader title={`Edit: ${member.name}`} />
+      <PageHeader backHref="/admin/team" title={`Edit: ${member.name}`} />
       <Flash params={await searchParams} />
       <TeamEditor member={member} />
     </>

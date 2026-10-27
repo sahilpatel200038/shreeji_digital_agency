@@ -112,6 +112,7 @@ export function PostCard({
   publishedAt,
   readingMinutes,
   featuredMediaId,
+  thumbnailMediaId,
   category,
 }: {
   slug: string;
@@ -120,14 +121,16 @@ export function PostCard({
   publishedAt: Date | null;
   readingMinutes: number;
   featuredMediaId: number | null;
+  /** The listing image. The banner image is only the fallback when none was uploaded. */
+  thumbnailMediaId?: number | null;
   category: { name: string; slug: string } | null;
 }) {
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-line bg-white transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)]">
       <Link href={`/blog/${slug}`} className="block" tabIndex={-1} aria-hidden="true">
         <div className="relative aspect-[16/9] overflow-hidden bg-forest-50">
-          {featuredMediaId ? (
-            <Image src={`/media/${featuredMediaId}`} alt="" fill sizes="(min-width: 1024px) 380px, 100vw" className="object-cover transition duration-500 group-hover:scale-105" />
+          {thumbnailMediaId || featuredMediaId ? (
+            <Image src={`/media/${thumbnailMediaId ?? featuredMediaId}`} alt="" fill sizes="(min-width: 1024px) 380px, 100vw" className="object-cover transition duration-500 group-hover:scale-105" />
           ) : (
             <div className="bg-brand-glow grid h-full place-items-center">
               <Icon name="file" size={40} className="text-gold-300" />

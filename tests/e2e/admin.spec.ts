@@ -34,7 +34,7 @@ test.describe("unauthenticated access", () => {
 
   test("admin API and export endpoints reject anonymous callers", async ({ request }) => {
     expect((await request.get("/api/admin/media")).status()).toBe(401);
-    const post = await request.post("/api/admin/media", { headers: { origin: "http://localhost:3100" }, multipart: { files: { name: "a.png", mimeType: "image/png", buffer: TINY_PNG } } });
+    const post = await request.post("/api/admin/media", { headers: { origin: process.env.BASE_URL ?? "http://localhost:3100" }, multipart: { files: { name: "a.png", mimeType: "image/png", buffer: TINY_PNG } } });
     expect(post.status()).toBe(401);
     const exp = await request.get("/admin/leads/export", { maxRedirects: 0 });
     expect([307, 401]).toContain(exp.status());
@@ -46,7 +46,7 @@ test.describe("unauthenticated access", () => {
   });
 
   test("forged / garbage session cookies are rejected", async ({ page, context }) => {
-    await context.addCookies([{ name: "shreeji_session", value: "eyJhbGciOiJIUzI1NiJ9.e30.forged", url: "http://localhost:3100" }]);
+    await context.addCookies([{ name: "shreeji_session", value: "eyJhbGciOiJIUzI1NiJ9.e30.forged", url: process.env.BASE_URL ?? "http://localhost:3100" }]);
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/admin\/login/);
     expect((await context.request.get("/api/admin/media")).status()).toBe(401);
@@ -106,7 +106,7 @@ test.describe("dashboard", () => {
     await expect(page).toHaveURL(/\/admin\/login/);
     // Replaying the old token must fail because the session row was deleted.
     const replay = await browser.newContext({ storageState: { cookies: [], origins: [] } });
-    await replay.addCookies([{ name: "shreeji_session", value: token, url: "http://localhost:3100" }]);
+    await replay.addCookies([{ name: "shreeji_session", value: token, url: process.env.BASE_URL ?? "http://localhost:3100" }]);
     expect((await replay.request.get("/api/admin/media")).status()).toBe(401);
     await ctx.close();
     await replay.close();
@@ -242,7 +242,8 @@ test.describe("blog posts and services", () => {
     await page.getByLabel("Title").first().fill("E2E Blog Post");
     await page.getByLabel("URL slug").fill(s);
     await page.getByLabel("Excerpt").fill("An excerpt for the e2e blog post.");
-    await addParagraph(page, "Post body paragraph for e2e.");
+    await page.locator(".rte-editor .ProseMirror").click();
+    await page.keyboard.type("Post body paragraph for e2e.");
     await page.getByLabel("Category", { exact: true }).selectOption({ label: "SEO" });
     await page.getByLabel("Tags").fill("e2e, testing");
     await page.getByLabel("Status").selectOption("PUBLISHED");

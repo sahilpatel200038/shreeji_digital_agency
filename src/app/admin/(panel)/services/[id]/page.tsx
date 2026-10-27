@@ -13,7 +13,7 @@ export default async function EditService({ params, searchParams }: { params: Pr
   if (!service) notFound();
   return (
     <>
-      <PageHeader
+      <PageHeader backHref="/admin/services"
         title={`Edit: ${service.title}`}
         actions={
           <>

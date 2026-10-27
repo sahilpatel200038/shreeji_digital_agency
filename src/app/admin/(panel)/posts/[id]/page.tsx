@@ -13,7 +13,7 @@ export default async function EditPost({ params, searchParams }: { params: Promi
   if (!post) notFound();
   return (
     <>
-      <PageHeader
+      <PageHeader backHref="/admin/posts"
         title={`Edit: ${post.title}`}
         actions={
           <>

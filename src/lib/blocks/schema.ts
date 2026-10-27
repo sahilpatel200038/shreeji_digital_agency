@@ -1,10 +1,13 @@
 import { z } from "zod";
 import { isSafeHref } from "@/lib/safe-url";
+import { htmlToText } from "@/lib/html-text";
 
 const href = z.string().trim().max(500).refine(isSafeHref, "Use an internal path (/contact), https:// link, mailto: or tel:");
 
 export const blockSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("heading"), level: z.union([z.literal(2), z.literal(3)]), text: z.string().trim().min(1).max(200) }),
+  // Sanitised HTML from the rich text editor (blog posts). Sanitised again on render.
+  z.object({ type: z.literal("richtext"), html: z.string().max(200_000) }),
   z.object({ type: z.literal("paragraph"), text: z.string().trim().min(1).max(5000) }),
   z.object({ type: z.literal("list"), ordered: z.boolean(), items: z.array(z.string().trim().min(1).max(500)).min(1).max(50) }),
   z.object({
@@ -39,6 +42,7 @@ export type BlockType = Block["type"];
 
 export const BLOCK_LABELS: Record<BlockType, string> = {
   heading: "Heading",
+  richtext: "Rich text",
   paragraph: "Paragraph",
   list: "List",
   image: "Image",
@@ -53,6 +57,8 @@ export function emptyBlock(type: BlockType): Block {
   switch (type) {
     case "heading":
       return { type, level: 2, text: "" };
+    case "richtext":
+      return { type, html: "" };
     case "paragraph":
       return { type, text: "" };
     case "list":
@@ -77,6 +83,9 @@ export function blocksToText(blocks: Block[]): string {
   const parts: string[] = [];
   for (const b of blocks) {
     switch (b.type) {
+      case "richtext":
+        parts.push(htmlToText(b.html));
+        break;
       case "heading":
       case "paragraph":
         parts.push(b.text);
@@ -116,7 +125,11 @@ export function parseBlocks(value: unknown): Block[] {
 
 /** All media ids referenced by blocks. */
 export function mediaIdsInBlocks(blocks: Block[]): number[] {
-  return blocks.flatMap((b) => (b.type === "image" ? [b.mediaId] : []));
+  return blocks.flatMap((b) => {
+    if (b.type === "image") return [b.mediaId];
+    if (b.type === "richtext") return [...b.html.matchAll(/\/media\/(\d+)/g)].map((m) => Number(m[1]));
+    return [];
+  });
 }
 
 /** Count internal links ("/..." markdown links) inside paragraph text. */
@@ -124,6 +137,10 @@ export function countInternalLinks(blocks: Block[]): number {
   let n = 0;
   const re = /\]\((\/[^)\s]*)\)/g;
   for (const b of blocks) {
+    if (b.type === "richtext") {
+      n += [...b.html.matchAll(/href="\/[^"/][^"]*"|href="\/"/g)].length;
+      continue;
+    }
     const texts = b.type === "paragraph" ? [b.text] : b.type === "list" ? b.items : b.type === "cta" ? [b.href] : [];
     for (const t of texts) {
       if (b.type === "cta") {

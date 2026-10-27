@@ -1,11 +1,12 @@
 import { AdminForm, SelectField, TextArea, TextInput } from "@/components/admin/admin-form";
-import { BlockEditor } from "@/components/admin/block-editor";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { MediaPicker } from "@/components/admin/media-picker";
 import { SeoPanel } from "@/components/admin/seo-panel";
 import { Card } from "@/components/admin/ui";
 import { createPostCategory, savePost } from "@/actions/posts";
 import { toDatetimeLocal } from "@/lib/content-helpers";
 import { parseBlocks } from "@/lib/blocks/schema";
+import { blocksToHtml, sanitizeRichText } from "@/lib/rich-text";
 import { scoreSeo } from "@/lib/seo/score";
 import { siteUrl } from "@/lib/env";
 import { db } from "@/lib/db";
@@ -35,11 +36,11 @@ export async function PostEditor({ post }: { post: PostFull | null }) {
     : null;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <AdminForm action={savePost} submitLabel={post ? "Save post" : "Create post"} className="space-y-6 xl:col-span-2" lock={post ? [lockKey.post(post.id)] : undefined} cancelHref="/admin/posts">
         {post && <input type="hidden" name="id" value={post.id} />}
-        <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
-          <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="min-w-0 space-y-6">
             <Card title="Content">
               <div className="space-y-4">
                 <TextInput label="Title" name="title" defaultValue={post?.title} required maxLength={150} />
@@ -47,7 +48,7 @@ export async function PostEditor({ post }: { post: PostFull | null }) {
                 <TextArea label="Excerpt" name="excerpt" defaultValue={post?.excerpt} rows={3} maxLength={500} hint="Shown on the blog index and used as the fallback meta description." />
                 <div>
                   <p className="mb-2 text-sm font-semibold text-forest-900">Post content</p>
-                  <BlockEditor defaultBlocks={blocks} />
+                  <RichTextEditor html={sanitizeRichText(blocksToHtml(blocks))} />
                 </div>
               </div>
             </Card>
@@ -55,7 +56,7 @@ export async function PostEditor({ post }: { post: PostFull | null }) {
               <SeoPanel seo={seo ? { ...seo, secondaryKeywords: (seo.secondaryKeywords as string[] | null) ?? [] } : null} checks={result?.checks} score={result?.score} previewUrl={`${siteUrl.replace(/^https?:\/\//, "")}/blog/`} slugValue={post?.slug} />
             </Card>
           </div>
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <Card title="Publishing">
               <div className="space-y-4">
                 <SelectField label="Status" name="status" defaultValue={post?.status ?? "DRAFT"} options={[{ value: "DRAFT", label: "Draft (not public)" }, { value: "PUBLISHED", label: "Published" }]} />
@@ -70,7 +71,10 @@ export async function PostEditor({ post }: { post: PostFull | null }) {
               </div>
             </Card>
             <Card title="Banner image">
-              <MediaPicker name="featuredMediaId" label="Image" defaultId={post?.featuredMediaId} hint="Shown on the right of the article banner and on blog cards. Landscape, at least 1200×800. Empty = the blog banner image." />
+              <MediaPicker name="featuredMediaId" label="Banner image" defaultId={post?.featuredMediaId} hint="Shown on the right of this article banner and used for social sharing. Landscape, at least 1200×800. Empty = the blog banner image." />
+            </Card>
+            <Card title="Listing thumbnail">
+              <MediaPicker name="thumbnailMediaId" label="Thumbnail" defaultId={post?.thumbnailMediaId} hint="Shown only on blog cards and the blog list, independent of the banner. Empty = the banner image is used." />
             </Card>
           </div>
         </div>

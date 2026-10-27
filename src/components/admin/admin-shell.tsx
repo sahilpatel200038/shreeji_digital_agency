@@ -7,6 +7,7 @@ import { startTransition, useEffect, useState } from "react";
 import { Icon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { UnsavedChangesProvider, useUnsavedGuard } from "@/components/admin/unsaved-changes";
+import { AdminNavTracker } from "@/components/admin/back-button";
 
 export type AdminNavItem = { href: string; label: string; icon: string };
 
@@ -126,6 +127,7 @@ function ShellInner({
       )}
 
       <main id="admin-main" className="min-w-0 bg-paper px-4 py-6 md:px-8 md:py-8">
+        <AdminNavTracker />
         {children}
       </main>
     </div>

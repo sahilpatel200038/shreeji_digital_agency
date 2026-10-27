@@ -3,8 +3,19 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icons";
+import { BackButton } from "@/components/admin/back-button";
 
-export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
+/** `backHref`: on edit and detail pages, the parent list the Back button falls back to when there is no in-app history. */
+export function PageHeader({ title, description, actions, backHref, backLabel }: { title: string; description?: string; actions?: ReactNode; backHref?: string; backLabel?: string }) {
+  return (
+    <>
+      {backHref && <BackButton fallbackHref={backHref} label={backLabel} />}
+      <PageHeaderRow title={title} description={description} actions={actions} />
+    </>
+  );
+}
+
+function PageHeaderRow({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div>

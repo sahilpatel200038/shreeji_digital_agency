@@ -17,6 +17,8 @@ type GuardApi = {
   notifyDirty: (id: string, dirty: boolean) => void;
   /** Runs `proceed` now if nothing is unsaved, otherwise asks first. For buttons that navigate (sign out ...). */
   confirmLeave: (proceed: () => void) => void;
+  /** True while any registered form holds unsaved edits. */
+  isDirty: () => boolean;
 };
 
 const GuardCtx = createContext<GuardApi | null>(null);
@@ -67,6 +69,7 @@ export function UnsavedChangesProvider({ children }: { children: React.ReactNode
           window.history.pushState(window.history.state, "", window.location.href);
         }
       },
+      isDirty: anyDirty,
       confirmLeave(proceed) {
         if (!anyDirty()) proceed();
         else ask({ go: proceed });

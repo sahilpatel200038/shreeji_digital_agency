@@ -3,12 +3,16 @@ import type { Block } from "@/lib/blocks/schema";
 import { Inline } from "@/components/blocks/inline";
 import { FaqAccordion } from "@/components/ui/faq-accordion";
 import { ButtonLink } from "@/components/ui/button";
+import { sanitizeRichText } from "@/lib/rich-text";
 
 export function BlockRenderer({ blocks }: { blocks: Block[] }) {
   return (
     <div className="prose-brand space-y-5 text-[1.0625rem]">
       {blocks.map((b, i) => {
         switch (b.type) {
+          case "richtext":
+            // Sanitised again at render time, so content stored before the sanitiser existed (or edited in the database) is safe too.
+            return <div key={i} className="rich-content" dangerouslySetInnerHTML={{ __html: sanitizeRichText(b.html) }} />;
           case "heading":
             return b.level === 2 ? (
               <h2 key={i} className="t-h2 !mt-12 first:!mt-0">

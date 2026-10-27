@@ -13,7 +13,7 @@ export default async function EditProject({ params, searchParams }: { params: Pr
   if (!project) notFound();
   return (
     <>
-      <PageHeader title={`Edit: ${project.name}`} />
+      <PageHeader backHref="/admin/projects" title={`Edit: ${project.name}`} />
       <Flash params={await searchParams} />
       <ProjectEditor project={project} />
     </>

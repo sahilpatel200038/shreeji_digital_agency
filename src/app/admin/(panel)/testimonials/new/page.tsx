@@ -6,7 +6,7 @@ export default async function NewTestimonial() {
   await requirePagePermission("content:write");
   return (
     <>
-      <PageHeader title="New testimonial" />
+      <PageHeader backHref="/admin/testimonials" title="New testimonial" />
       <TestimonialEditor t={null} />
     </>
   );

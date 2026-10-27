@@ -2,6 +2,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
 import { assertServerEnv } from "@/lib/env-check";
 import { connectionFromEnv, intEnv } from "@/lib/db-config";
+import { withDbRetry } from "@/lib/db-retry";
 
 function createClient() {
   assertServerEnv();
@@ -32,7 +33,16 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 // One client (one pool) per process in every mode. Without this, each bundled copy of this module in production
 // opened its own pool, multiplying connections and exhausting the host's hourly connection allowance.
-export const db: PrismaClient = globalForPrisma.prisma ?? (globalForPrisma.prisma = createClient());
+export const db: PrismaClient =
+  globalForPrisma.prisma ??
+  (globalForPrisma.prisma = createClient().$extends({
+    query: {
+      // Every query, on every page and action, gets the same bounded retry for failures to *open* a connection (nothing reached
+      // the server, so repeating is safe for reads and writes). Everything else, including auth, schema, SQL and pool-saturation
+      // errors, is thrown at once (see isRetryableConnectError).
+      $allOperations: ({ args, query }) => withDbRetry(() => query(args)),
+    },
+  }) as unknown as PrismaClient);
 
 // Close the pool when the process is asked to stop, so the server is not left holding half-open connections that count
 // against the host's per-user limit until they time out. Next installs its own handler that ends the process; only

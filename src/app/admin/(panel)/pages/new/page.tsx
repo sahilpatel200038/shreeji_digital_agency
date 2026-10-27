@@ -6,7 +6,7 @@ export default async function NewPage() {
   await requirePagePermission("content:write");
   return (
     <>
-      <PageHeader title="New page" />
+      <PageHeader backHref="/admin/pages" title="New page" />
       <PageEditor page={null} />
     </>
   );

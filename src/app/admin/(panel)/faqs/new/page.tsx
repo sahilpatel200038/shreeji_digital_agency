@@ -6,7 +6,7 @@ export default async function NewFaq() {
   await requirePagePermission("content:write");
   return (
     <>
-      <PageHeader title="New FAQ" />
+      <PageHeader backHref="/admin/faqs" title="New FAQ" />
       <FaqEditor f={null} />
     </>
   );

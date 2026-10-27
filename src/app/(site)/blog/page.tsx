@@ -75,7 +75,7 @@ export default async function BlogPage({ searchParams }: Props) {
           <Stagger className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" key={`${q}-${data.page}`}>
             {data.items.map((p) => (
               <StaggerItem key={p.id}>
-                <PostCard {...p} featuredMediaId={p.featuredMediaId} />
+                <PostCard {...p} />
               </StaggerItem>
             ))}
           </Stagger>

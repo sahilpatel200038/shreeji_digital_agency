@@ -19,7 +19,7 @@ export default async function EditSitePage({ params }: { params: Promise<{ key: 
   const seo = await getListingSeoRow(key);
   return (
     <>
-      <PageHeader
+      <PageHeader backHref="/admin/site-pages"
         title={`Edit: ${page.label} page`}
         actions={<LinkButton href={page.path} variant="outline">View live</LinkButton>}
       />

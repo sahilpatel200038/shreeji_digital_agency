@@ -8,7 +8,7 @@ export default async function NewTeamMember() {
   const last = await db.teamMember.aggregate({ _max: { sortOrder: true } });
   return (
     <>
-      <PageHeader title="New team member" />
+      <PageHeader backHref="/admin/team" title="New team member" />
       <TeamEditor member={null} nextOrder={(last._max.sortOrder ?? 0) + 1} />
     </>
   );

@@ -19,6 +19,7 @@ const postSchema = z.object({
   status: z.enum(["DRAFT", "PUBLISHED"]),
   excerpt: z.string().trim().max(500),
   featuredMediaId: z.number().int().positive().nullable(),
+  thumbnailMediaId: z.number().int().positive().nullable(),
   categoryId: z.number().int().positive().nullable(),
 });
 
@@ -28,12 +29,14 @@ export async function savePost(_prev: unknown, fd: FormData): Promise<ActionResu
     const id = Number(fd.get("id")) || 0;
     if (id) await assertEditLocks(user, [lockKey.post(id)], fd);
     const media = Number(fd.get("featuredMediaId"));
+    const thumb = Number(fd.get("thumbnailMediaId"));
     const cat = Number(fd.get("categoryId"));
     const parsed = postSchema.safeParse({
       title: fd.get("title") ?? "",
       status: fd.get("status") ?? "DRAFT",
       excerpt: fd.get("excerpt") ?? "",
       featuredMediaId: Number.isInteger(media) && media > 0 ? media : null,
+      thumbnailMediaId: Number.isInteger(thumb) && thumb > 0 ? thumb : null,
       categoryId: Number.isInteger(cat) && cat > 0 ? cat : null,
     });
     if (!parsed.success) throw new AppError("Please fix the highlighted fields.", fieldErrorsFrom(parsed.error));
@@ -49,6 +52,11 @@ export async function savePost(_prev: unknown, fd: FormData): Promise<ActionResu
       if (parsed.data.categoryId && !(await tx.postCategory.findUnique({ where: { id: parsed.data.categoryId } }))) {
         throw new AppError("That category no longer exists.", { categoryId: ["Choose a valid category"] });
       }
+      for (const [field, mediaId] of [["featuredMediaId", parsed.data.featuredMediaId], ["thumbnailMediaId", parsed.data.thumbnailMediaId]] as const) {
+        if (mediaId && !(await tx.media.findUnique({ where: { id: mediaId }, select: { id: true } }))) {
+          throw new AppError("That image is no longer in the media library.", { [field]: ["Choose or upload the image again"] });
+        }
+      }
       const slug = await resolveSlug(tx, "post", String(fd.get("slug") ?? ""), parsed.data.title, id || undefined);
       const seoId = await saveSeo(tx, existing?.seoId, seo.data);
       const publishedAt = parsed.data.status === "PUBLISHED" ? (publishedAtInput ?? existing?.publishedAt ?? new Date()) : (publishedAtInput ?? existing?.publishedAt ?? null);
@@ -58,6 +66,7 @@ export async function savePost(_prev: unknown, fd: FormData): Promise<ActionResu
         excerpt: parsed.data.excerpt || null,
         blocks,
         featuredMediaId: parsed.data.featuredMediaId,
+        thumbnailMediaId: parsed.data.thumbnailMediaId,
         categoryId: parsed.data.categoryId,
         status: parsed.data.status,
         publishedAt,
@@ -74,7 +83,7 @@ export async function savePost(_prev: unknown, fd: FormData): Promise<ActionResu
         await tx.postTag.create({ data: { postId: row.id, tagId: tag.id } });
       }
       if (existing && existing.status === "PUBLISHED" && existing.slug !== slug) await redirectOnSlugChange(tx, "/blog", existing.slug, slug);
-      const changes = existing ? diffFields({ ...existing, content: JSON.stringify(existing.blocks) }, { ...data, content: JSON.stringify(blocks) }, ["title", "slug", "excerpt", "featuredMediaId", "categoryId", "status", "publishedAt", "content"]) : null;
+      const changes = existing ? diffFields({ ...existing, content: JSON.stringify(existing.blocks) }, { ...data, content: JSON.stringify(blocks) }, ["title", "slug", "excerpt", "featuredMediaId", "thumbnailMediaId", "categoryId", "status", "publishedAt", "content"]) : null;
       return { id: row.id, changes };
     });
 

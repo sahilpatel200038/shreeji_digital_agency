@@ -14,7 +14,7 @@ export default async function EditPage({ params, searchParams }: { params: Promi
   if (!page) notFound();
   return (
     <>
-      <PageHeader
+      <PageHeader backHref="/admin/pages"
         title={`Edit: ${page.title}`}
         actions={
           <>

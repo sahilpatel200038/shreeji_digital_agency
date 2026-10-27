@@ -13,7 +13,7 @@ export default async function EditTestimonial({ params, searchParams }: { params
   if (!t) notFound();
   return (
     <>
-      <PageHeader title={`Edit: ${t.name}`} />
+      <PageHeader backHref="/admin/testimonials" title={`Edit: ${t.name}`} />
       <Flash params={await searchParams} />
       <TestimonialEditor t={t} />
     </>

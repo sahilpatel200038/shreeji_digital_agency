@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { UploadZone } from "@/components/admin/upload-zone";
+import { uploadImage } from "@/components/admin/upload-image";
 import { Icon } from "@/components/ui/icons";
 
 type Item = { id: number; title: string; altText: string; checksum: string };
@@ -28,7 +29,11 @@ export function MediaPicker({
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<number | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async (p: number, query: string) => {
     setLoading(true);
@@ -56,7 +61,32 @@ export function MediaPicker({
     return () => clearTimeout(t);
   }, [page, q, load]);
 
+  /** Direct upload from the computer: preview straight away, then the new media item becomes the selection. */
+  async function uploadFromComputer(file: File | undefined) {
+    if (!file) return;
+    setUploadError(null);
+    const local = URL.createObjectURL(file);
+    setUploading(0);
+    const res = await uploadImage(file, "general", setUploading);
+    setUploading(null);
+    if (!res.ok) {
+      URL.revokeObjectURL(local);
+      setUploadError(res.error);
+      return;
+    }
+    setPreviewUrl((old) => {
+      if (old) URL.revokeObjectURL(old);
+      return local;
+    });
+    setId(res.id);
+    onChange?.(res.id);
+  }
+
   function choose(next: number | null) {
+    setPreviewUrl((old) => {
+      if (old) URL.revokeObjectURL(old);
+      return null;
+    });
     setId(next);
     onChange?.(next);
     dialogRef.current?.close();
@@ -68,7 +98,16 @@ export function MediaPicker({
       {name && <input type="hidden" name={name} value={id ?? ""} />}
       <div className="flex items-center gap-4">
         <div className="relative grid size-24 shrink-0 place-items-center overflow-hidden rounded-lg border border-line bg-forest-50">
-          {id ? <Image src={`/media/${id}`} alt="" fill sizes="96px" className="object-contain p-1" unoptimized /> : <Icon name="image" className="text-muted" />}
+          {id ? (
+            previewUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- a blob: preview of the file just chosen cannot go through next/image
+              <img src={previewUrl} alt="Preview of the selected image" className="size-full object-contain p-1" />
+            ) : (
+              <Image src={`/media/${id}`} alt="Selected image" fill sizes="96px" className="object-contain p-1" unoptimized />
+            )
+          ) : (
+            <Icon name="image" className="text-muted" />
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -81,6 +120,25 @@ export function MediaPicker({
           >
             {id ? "Change image" : "Choose image"}
           </button>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading !== null}
+            className="min-h-10 rounded-lg bg-forest-900 px-4 text-sm font-semibold text-white hover:bg-forest-800 disabled:opacity-60"
+          >
+            {uploading !== null ? `Uploading ${uploading}%` : id ? "Replace from computer" : "Upload from computer"}
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
+            className="sr-only"
+            aria-label={`${label}: choose an image file from your computer`}
+            onChange={(e) => {
+              void uploadFromComputer(e.target.files?.[0]);
+              e.target.value = "";
+            }}
+          />
           {id && (
             <button type="button" onClick={() => choose(null)} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-danger hover:bg-[#fbeceb]">
               Remove
@@ -88,6 +146,11 @@ export function MediaPicker({
           )}
         </div>
       </div>
+      {uploadError && (
+        <p role="alert" className="mt-1.5 text-sm font-medium text-danger">
+          {uploadError}
+        </p>
+      )}
       {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
 
       <dialog ref={dialogRef} aria-label="Media library" className="m-auto h-[min(88vh,720px)] w-[min(96vw,900px)] rounded-[var(--radius-card)] p-0 backdrop:bg-forest-950/50">

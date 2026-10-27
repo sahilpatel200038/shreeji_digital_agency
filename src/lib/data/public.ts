@@ -131,6 +131,7 @@ const POST_LIST_SELECT = {
   publishedAt: true,
   readingMinutes: true,
   featuredMediaId: true,
+  thumbnailMediaId: true,
   category: { select: { name: true, slug: true } },
   author: { select: { name: true } },
 } as const;

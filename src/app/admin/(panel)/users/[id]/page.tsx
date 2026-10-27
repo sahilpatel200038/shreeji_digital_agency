@@ -15,7 +15,7 @@ export default async function EditUser({ params }: { params: Promise<{ id: strin
   if (!u) notFound();
   return (
     <>
-      <PageHeader title={u.name} description={u.email} />
+      <PageHeader backHref="/admin/users" title={u.name} description={u.email} />
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Profile & access">
           <AdminForm action={updateUser} lock={[lockKey.user(u.id)]} cancelHref="/admin/users">

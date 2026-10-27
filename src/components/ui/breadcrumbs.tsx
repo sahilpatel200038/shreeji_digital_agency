@@ -85,7 +85,7 @@ export function PageHero({
         )}
         {/* Short titles use the homepage headline size; long ones (articles, service headlines) step down so they stay readable. */}
         <h1 className={cn(title.length <= 32 ? "t-h1" : "t-h1", "!text-white")}>{title}</h1>
-        {intro && <p className="mt-6 max-w-xl text-lg text-white/80 md:text-xl">{intro}</p>}
+        {intro && <p className="t-hero-lead mt-5 max-w-xl text-white/80 md:mt-6">{intro}</p>}
         {children && <div className="mt-9 flex flex-wrap gap-4">{children}</div>}
       </div>
       <div className="relative mx-auto w-full max-w-xl lg:max-w-none">

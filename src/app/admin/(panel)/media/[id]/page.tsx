@@ -21,7 +21,7 @@ export default async function MediaDetail({ params, searchParams }: { params: Pr
 
   return (
     <>
-      <PageHeader title={m.title} description={`${m.fileName} · uploaded ${formatDate(m.createdAt)}`} />
+      <PageHeader backHref="/admin/media" title={m.title} description={`${m.fileName} · uploaded ${formatDate(m.createdAt)}`} />
       <Flash params={await searchParams} />
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
         <Card title="Preview">

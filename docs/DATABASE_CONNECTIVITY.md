@@ -105,3 +105,50 @@ Not run: the Playwright e2e suite (needs the full seeded fixture), and anything 
 - During a real outage the first login attempt still waits ~20-26 s (2x pool acquire timeout + the probe). Lower `DB_ACQUIRE_TIMEOUT_MS` (for example 5000) for faster failure, at the cost of tolerance to slow connects.
 - Recommended follow-up (frontend scope, not done): make `src/app/not-found.tsx` independent of DB queries (static chrome), which removes ~9 queries from every dynamic page, including the login page.
 - Rate limiting: a perfectly simultaneous burst on one key can block slightly early; it can never allow more than the limit.
+
+---
+
+## Update 2026-10-26: public "Something went wrong" screen, request logging, query-level retry
+
+### The public error screen (reference `1806470507`)
+
+The screen is `src/app/error.tsx`, Next's route error boundary. The "Reference" is **Next's error digest**: a hash of the server error that was thrown while rendering the page. A digest only exists for errors thrown on the *server* (a browser-only crash has none), so this is a server-render failure, not a client-side bug, and the number alone does not say what failed.
+
+**What was verified (local MySQL, production build `.next-verify`):**
+
+- A GET crawl of every URL in `sitemap.xml` plus `/blog?page=2`, `/blog?q=…`, category pages and 404 probes: all 200 (or the expected 404/308), no error screen, no `request_error` log line. So on a healthy database no public page throws.
+- With the database made unreachable (a TCP forwarder in front of MySQL stopped; the real server untouched), the pages that are *not* cached fail: `/blog` and `/blog/category/*` return 500 after ~20 s (2 × the 10 s pool wait) and show exactly this screen with a Reference. Pages that Next has already built and cached (`/`, `/about`, `/services/*`, `/blog/<slug>`) keep serving the last good copy. Once the database returns, the same running process recovers on the next request (no restart): `/blog` 200 again in ~200 ms.
+
+**Most likely cause on production, not confirmed:** the live database was unreachable or over its connection allowance at the moment of the request (the same condition as the admin "cannot reach its database" message), hitting a page that must query the database on every request (`/blog`, category pages, and any page whose cache had to be rebuilt). The production logs were not available, so this is an inference, not a finding. It is confirmed or ruled out in one step now:
+
+1. Deploy this version.
+2. When the screen appears, search the app log for the Reference: `grep 1806470507 <app log>`.
+3. The matching line is one JSON object, e.g. `{"level":"error","msg":"request_error","digest":"1806470507","path":"/blog","routePath":"/blog","dbKind":"unreachable","dbCode":"P2039","error":"…"}`. `path` says which page; `dbKind` says whether it was the database (`unreachable`, `busy`, `limit`, `access`, `schema`) and an absent `dbKind` means an application error whose text is in `error`.
+
+(The digest is derived by Next from the error's message and stack, so one failure repeats the same number: in the simulation above the failing `/blog` renders logged digest `2209355588` (settings query) or `3699642593` (category query) and the page showed the same number. `1806470507` identifies one specific error on the live server. It can only be matched to a cause from log lines written by this version, because older versions did not log the digest.)
+
+### Changes
+
+| File | Change |
+|---|---|
+| `src/instrumentation.ts` (new) | `onRequestError` logs every server error Next captures (page render, route handler, server action) as one scrubbed JSON line with `digest`, `path` (no query string), `routePath`, `routeType`, `revalidateReason`, `dbKind`/`dbCode`, error name and message. No URLs, passwords or tokens. This is the link between the number a visitor sees and the cause. |
+| `src/lib/db.ts` | The Prisma client is extended so **every** query gets the bounded retry (`withDbRetry`: at most 2 retries, jittered 150/300 ms, only for failures to *open* a connection such as `ECONNREFUSED`, `ETIMEDOUT`, `ENOTFOUND`). Before, only login, session lookup and rate limiting retried. Auth, schema, SQL, pool-saturation and mid-query errors are still thrown immediately, and there is still one client and one pool per process. |
+
+Not changed on purpose: the pool wait (`DB_ACQUIRE_TIMEOUT_MS`, 10 s). Lowering it (for example 5000) makes a real outage show the error screen after ~10 s instead of ~20 s but makes slow connects on a busy host fail sooner.
+
+### Verification run for this update
+
+| # | Scenario | Result |
+|---|---|---|
+| 1 | Unit tests | 141/141 (8 new: sanitiser and rich-text blocks) |
+| 2 | Integration tests against the test database (connections, leaks, outage classification, media usage) | 35/35 after applying the new migration to the test database |
+| 3 | `tsc --noEmit`, `eslint src` | clean |
+| 4 | `next build --webpack` | passes |
+| 5 | Sitemap crawl, 42 URLs | all as expected |
+| 6 | Database outage and recovery through a forwarder, app not restarted | uncached pages 500 with a digest during the outage and the digest is in the log; recovery on the next request |
+| 7 | New browser tests `tests/e2e/blog-media.spec.ts` (separate banner/thumbnail upload, rich text, persistence, public rendering, validation, legacy posts, stored-XSS, Back button, Word paste, phone layout) | 6/6 |
+| 8 | Whole e2e suite (394 tests) against the production build | 364 passed, 15 failed, 15 not run. The same 15 fail identically on the untouched previous commit (built and run side by side), so none were caused by this work: they depend on the current content of the shared development database (for example 5 header links where the test expects more than 6, About team members, homepage SEO text, an FAQ block on `/services/seo`) and on slider and banner height expectations |
+
+### Hosting-side checks (cannot be done from code)
+
+Unchanged from the deployment section above, and still required to make an outage *rarer* rather than just diagnosable: read `max_user_connections` and `max_connections_per_hour` in hPanel, keep `Node processes × DB_POOL_LIMIT` below the first, rotate the database password that was committed in git history (`e0423b2`), and ask support whether MySQL restarted at the times the error was reported.

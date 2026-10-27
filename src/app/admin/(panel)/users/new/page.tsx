@@ -7,7 +7,7 @@ export default async function NewUser() {
   await requirePagePermission("users:manage");
   return (
     <>
-      <PageHeader title="Add user" />
+      <PageHeader backHref="/admin/users" title="Add user" />
       <Card>
         <AdminForm action={createUser} submitLabel="Create user" cancelHref="/admin/users">
           <div className="grid gap-4 md:grid-cols-2">

@@ -37,6 +37,8 @@ A multi-page, SEO-managed marketing website for **Shreeji Marketing / Shreeji Di
 - **Editing locks**: two administrators cannot edit the same page or module at once; locks expire automatically.
 - A **sticky save bar** on every editor, with loading, success and error states.
 - Role-based access (Super Admin, Administrator, Editor) enforced on the server for every page, action and API route.
+- **Blog editor**: a rich text editor (headings, bold/italic/underline, lists, alignment, colour, links, images, Word paste), a separate **banner image** and **listing thumbnail** per post, each uploadable straight from the computer with a preview.
+- A **Back** button at the top of every edit and detail page.
 
 ## Prerequisites
 
@@ -87,7 +89,7 @@ npm run db:migrate          # development only: create a new migration after edi
 
 The seed only ever **adds** missing rows; it never truncates or overwrites existing content. It also performs the one-off split of the old combined "Web / App Development & Design" service into two services (the old address keeps working through a 301).
 
-Migrations: `init` · `activity_logs_and_team` · `service_page_options` · `edit_locks_and_featured_services` (adds the editing-lock tables and the "Main service" flag on services).
+Migrations: `init` · `activity_logs_and_team` · `service_page_options` · `edit_locks_and_featured_services` (adds the editing-lock tables and the "Main service" flag on services). · `post_thumbnail` (adds `Post.thumbnailMediaId`, the separate blog listing image; additive and nullable, so existing posts and data are untouched).
 
 ## Running locally
 
@@ -152,6 +154,18 @@ Each editor form passes `lock={[…resource keys…]}` (keys in `src/lib/lock-ke
 - **Server enforcement:** every save/delete Server Action calls `assertEditLocks` / `assertNotLockedByOthers`, so calling an action directly cannot bypass a lock. The same administrator in a second tab is also kept out.
 - Not covered: optimistic-concurrency checks on stale form data after a lock has expired and been retaken; the lock prevents concurrent editing, it does not merge edits.
 
+### Blog posts: rich text, banner image and listing thumbnail
+
+- **Editor.** `src/components/admin/rich-text-editor.tsx` is a [Tiptap](https://tiptap.dev) editor (ProseMirror). The toolbar has text style (paragraph, heading, subheading), bold, italic, underline, strikethrough, text colour, bulleted and numbered lists, quote, alignment, link, image (uploaded to the media library), horizontal line, clear formatting, undo and redo. Pasting from Word or Google Docs keeps headings, lists, bold/italic/underline, links and alignment; anything the editor cannot represent (tables, fonts, sizes, Word-specific markup) is dropped. It is a single toolbar that wraps on phones.
+- **Storage.** The post body is still the `Post.blocks` JSON column, now holding one `{ "type": "richtext", "html": "…" }` block, so no schema change was needed for the content. Older posts made of heading/paragraph/list/image/quote/FAQ blocks are **not rewritten in the database**: they are converted to HTML when the post is opened in the editor (`blocksToHtml` in `src/lib/rich-text.ts`) and are only stored as rich text if the editor saves them. FAQ and call-to-action blocks become headings and links on conversion (the FAQ accordion and FAQ structured data are dropped for that post).
+- **Safety.** HTML is sanitised with an allow-list (`sanitizeRichText`, built on `sanitize-html`) when a post is saved and again when it is rendered, so markup stored by older code or edited directly in the database cannot run script. Allowed: headings, paragraphs, lists, quotes, bold/italic/underline/strike, links (`/path`, `https:`, `mailto:`, `tel:`), images from `/media/<id>` or `https:`, `text-align` and `color` styles. Everything else, including event handlers, `javascript:` and `data:` URLs, iframes and other styles, is removed. Covered by `tests/unit/rich-text.test.ts`.
+- **Two independent images.** *Banner image* (`Post.featuredMediaId`) is the picture in the article's banner and the social-sharing image. *Listing thumbnail* (`Post.thumbnailMediaId`, added by migration `20261026090000_post_thumbnail`) is shown only on blog cards (list, category pages, related articles). If no thumbnail is set the card falls back to the banner image, then to the default artwork. Each picker can **upload from the computer** (type and 5 MB limits checked in the browser and again on the server, with a preview and progress), **choose from the library**, replace or remove.
+- **Media in use.** An image used as a banner, thumbnail or inside post content cannot be deleted from the media library.
+
+### Back button on edit pages
+
+`PageHeader` (`src/components/admin/ui.tsx`) takes a `backHref`. Edit and detail pages for pages, posts, services, projects, team, testimonials, FAQs, users, leads, media, site pages and activity-log entries pass their parent list. `BackButton` returns to the page the administrator came from inside the admin (keeping list filters and page number); with no in-app history (page opened from a bookmark, reload, new tab) it goes to the parent list. It goes through the unsaved-changes guard. Settings-style screens that have no parent (Header, Footer, Home page, Contact page, Menus, SEO, Settings) are not edit pages of a list item and have no Back button.
+
 ### Header, footer and team
 
 - **Header Management** (`/admin/header`): logo, brand text, navigation links (with dropdowns), call-to-action button (text, link, new tab, on/off). Stored in the `header` setting plus the `header` menu.
@@ -205,6 +219,7 @@ bcrypt (cost 12) passwords · HTTP-only SameSite cookie + server-side session ro
 | Admin page says it is being edited by someone | Wait for their lock to release (at most 90 s after they close the page) or use **Request access**. Stale locks can also be cleared with `DELETE FROM EditLock` |
 | E2E tests hang or time out | Make sure `next start -p 3100` is running a fresh build and that port 3100 is free |
 | First `next dev` request is very slow on a network or synced drive | Next warns about slow file systems; use a local disk, or test against a production build |
+| Public page says "Something went wrong" with a **Reference** number | The number is Next's error digest. Search the server log for it: `grep 1806470507 <log>` finds a `{"msg":"request_error","digest":"…"}` line with the path, the route, and the cause (`dbKind`/`dbCode` for database problems). See `docs/DATABASE_CONNECTIVITY.md` for what each `dbKind` means |
 | Old service address returns 404 | Check Admin → SEO & redirects; slug changes on published services add a 301 automatically |
 
 ## Further documentation

@@ -6,7 +6,7 @@ import { mediaIdsInBlocks, parseBlocks } from "@/lib/blocks/schema";
 export async function findMediaUsage(id: number): Promise<string[]> {
   const [pages, posts, services, projects, seos, settings, bannerSetting, homeSetting, blockPages, blockPosts, blockServices] = await Promise.all([
     db.page.findMany({ where: { featuredMediaId: id }, select: { title: true } }),
-    db.post.findMany({ where: { featuredMediaId: id }, select: { title: true } }),
+    db.post.findMany({ where: { OR: [{ featuredMediaId: id }, { thumbnailMediaId: id }] }, select: { title: true, featuredMediaId: true, thumbnailMediaId: true } }),
     db.service.findMany({ where: { featuredMediaId: id }, select: { title: true } }),
     db.project.findMany({ where: { mediaId: id }, select: { name: true } }),
     db.seoMeta.count({ where: { ogMediaId: id } }),
@@ -19,7 +19,10 @@ export async function findMediaUsage(id: number): Promise<string[]> {
   ]);
   const used: string[] = [];
   pages.forEach((p) => used.push(`Page “${p.title}” (featured image)`));
-  posts.forEach((p) => used.push(`Post “${p.title}” (featured image)`));
+  posts.forEach((p) => {
+    if (p.featuredMediaId === id) used.push(`Post “${p.title}” (banner image)`);
+    if (p.thumbnailMediaId === id) used.push(`Post “${p.title}” (listing thumbnail)`);
+  });
   services.forEach((s) => used.push(`Service “${s.title}” (featured image)`));
   projects.forEach((p) => used.push(`Project “${p.name}”`));
   if (seos > 0) used.push(`${seos} SEO social image setting(s)`);

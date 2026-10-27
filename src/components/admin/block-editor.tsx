@@ -6,7 +6,8 @@ import { MediaPicker } from "@/components/admin/media-picker";
 import { Icon } from "@/components/ui/icons";
 import { inputClass } from "@/components/admin/admin-form";
 
-const TYPES = Object.keys(BLOCK_LABELS) as BlockType[];
+// Rich text is edited by the dedicated editor (blog posts), not added as a block here.
+const TYPES = (Object.keys(BLOCK_LABELS) as BlockType[]).filter((t) => t !== "richtext");
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
