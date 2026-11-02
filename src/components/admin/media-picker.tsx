@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { UploadZone } from "@/components/admin/upload-zone";
 import { uploadImage } from "@/components/admin/upload-image";
 import { Icon } from "@/components/ui/icons";
+import { meaningfulImageDescription } from "@/lib/image-alt";
 
 type Item = { id: number; title: string; altText: string; checksum: string };
 
@@ -32,6 +33,7 @@ export function MediaPicker({
   const [uploading, setUploading] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const selectedItem = items.find((item) => item.id === id);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -101,9 +103,9 @@ export function MediaPicker({
           {id ? (
             previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- a blob: preview of the file just chosen cannot go through next/image
-              <img src={previewUrl} alt="Preview of the selected image" className="size-full object-contain p-1" />
+              <img src={previewUrl} alt={`${label} preview`} className="size-full object-contain p-1" />
             ) : (
-              <Image src={`/media/${id}`} alt="Selected image" fill sizes="96px" className="object-contain p-1" unoptimized />
+              <Image src={`/media/${id}`} alt={meaningfulImageDescription(selectedItem?.altText, selectedItem?.title || `${label} preview`)} fill sizes="96px" className="object-contain p-1" unoptimized />
             )
           ) : (
             <Icon name="image" className="text-muted" />
@@ -177,7 +179,7 @@ export function MediaPicker({
                 <li key={it.id}>
                   <button type="button" onClick={() => choose(it.id)} className={`block w-full overflow-hidden rounded-lg border-2 text-left transition hover:border-bronze-500 ${it.id === id ? "border-forest-800" : "border-line"}`}>
                     <span className="relative block aspect-square bg-forest-50">
-                      <Image src={`/media/${it.id}?v=${it.checksum.slice(0, 8)}`} alt={it.altText} fill sizes="200px" className="object-contain p-1" unoptimized />
+                      <Image src={`/media/${it.id}?v=${it.checksum.slice(0, 8)}`} alt={meaningfulImageDescription(it.altText, it.title)} title={it.title} fill sizes="200px" className="object-contain p-1" unoptimized />
                     </span>
                     <span className="block truncate px-2 py-1.5 text-xs font-medium">{it.title}</span>
                   </button>

@@ -13,7 +13,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <main className="bg-brand-glow grid min-h-dvh place-items-center px-4 py-10">
       <div className="w-full max-w-md rounded-[var(--radius-panel)] bg-white p-8 shadow-[var(--shadow-lift)]">
         <div className="mb-6 flex items-center gap-3">
-          <Image src="/brand/logo-mark.png" alt="" width={48} height={44} className="h-11 w-auto" priority />
+          <Image src="/brand/logo-mark.png" alt="Shreeji Digital Agency Logo" title="Shreeji Digital Agency" width={48} height={44} className="h-11 w-auto" preload />
           <div>
             <h1 className="text-2xl font-extrabold">Admin sign in</h1>
             <p className="text-sm text-muted">Shreeji Marketing CMS</p>

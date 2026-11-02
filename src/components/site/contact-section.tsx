@@ -4,6 +4,7 @@ import { Section } from "@/components/ui/layout";
 import { Icon } from "@/components/ui/icons";
 import { Reveal } from "@/components/motion/reveal";
 import { ContactForm } from "@/components/site/contact-form";
+import { linkTitle } from "@/lib/link-title";
 
 /** The single enquiry section shown directly above the footer on every public page. */
 export async function ContactSection() {
@@ -23,7 +24,7 @@ export async function ContactSection() {
                 <span className="block font-bold text-forest-900">{contact.visitLabel}</span>
                 <span className="text-muted">{contact.address}</span>
                 {contact.mapsUrl && (
-                  <a href={contact.mapsUrl} target="_blank" rel="noopener noreferrer" className="mt-1 block font-semibold text-bronze-700 hover:underline">
+                  <a href={contact.mapsUrl} title={linkTitle(contact.mapsUrl, "the Shreeji Digital Agency location")} target="_blank" rel="noopener noreferrer" className="mt-1 block font-semibold text-bronze-700 hover:underline">
                     {contact.mapsLabel}
                   </a>
                 )}
@@ -35,7 +36,7 @@ export async function ContactSection() {
               </span>
               <span>
                 <span className="block font-bold text-forest-900">{contact.callLabel}</span>
-                <a href={`tel:${contact.phone.replace(/[^+\d]/g, "")}`} className="text-muted hover:text-bronze-700">
+                <a href={`tel:${contact.phone.replace(/[^+\d]/g, "")}`} title={linkTitle(`tel:${contact.phone}`)} className="text-muted hover:text-bronze-700">
                   {contact.phone}
                 </a>
               </span>
@@ -46,7 +47,7 @@ export async function ContactSection() {
               </span>
               <span>
                 <span className="block font-bold text-forest-900">{contact.emailLabel}</span>
-                <a href={`mailto:${contact.email}`} className="break-all text-muted hover:text-bronze-700">
+                <a href={`mailto:${contact.email}`} title={linkTitle(`mailto:${contact.email}`)} className="break-all text-muted hover:text-bronze-700">
                   {contact.email}
                 </a>
               </span>

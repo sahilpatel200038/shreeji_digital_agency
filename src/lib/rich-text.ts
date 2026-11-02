@@ -1,5 +1,9 @@
 import sanitizeHtml from "sanitize-html";
 import type { Block } from "@/lib/blocks/schema";
+import { linkTitle } from "@/lib/link-title";
+import { meaningfulImageDescription } from "@/lib/image-alt";
+
+export type RichTextImageDescriptions = ReadonlyMap<number, { title: string; altText: string }>;
 
 /** Colour values the editor can produce (hex, rgb(a), hsl or a plain keyword). Anything else is dropped. */
 const COLOR = [/^#[0-9a-f]{3,8}$/i, /^rgba?\(\s*[\d.\s,%]+\)$/i, /^hsla?\(\s*[\d.\s,%deg]+\)$/i, /^[a-z]{3,20}$/i];
@@ -8,8 +12,8 @@ const ALIGN = [/^(left|right|center|justify)$/];
 const OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: ["p", "br", "h2", "h3", "h4", "strong", "b", "em", "i", "u", "s", "span", "ul", "ol", "li", "blockquote", "a", "img", "hr", "code", "pre"],
   allowedAttributes: {
-    a: ["href", "target", "rel"],
-    img: ["src", "alt", "width", "height", "loading"],
+    a: ["href", "target", "rel", "title"],
+    img: ["src", "alt", "title", "width", "height", "loading"],
     p: ["style"],
     h2: ["style"],
     h3: ["style"],
@@ -28,7 +32,7 @@ const OPTIONS: sanitizeHtml.IOptions = {
     a: (tagName, attribs) => {
       const href = attribs.href ?? "";
       const external = /^https?:\/\//i.test(href);
-      const next: Record<string, string> = { href };
+      const next: Record<string, string> = { href, title: attribs.title?.trim() || linkTitle(href) };
       if (external) {
         next.target = "_blank";
         next.rel = "noopener noreferrer";
@@ -37,17 +41,53 @@ const OPTIONS: sanitizeHtml.IOptions = {
     },
     img: (tagName, attribs) => {
       const src = attribs.src ?? "";
+      const alt = attribs.alt ?? "";
       // Relative media paths are the only non-https source allowed.
       const ok = /^\/media\/\d+(\?[a-z0-9=&]*)?$/i.test(src) || /^https:\/\//i.test(src);
-      return { tagName, attribs: ok ? { ...attribs, loading: "lazy" } : {} };
+      return {
+        tagName,
+        attribs: ok
+          ? {
+              ...attribs,
+              alt,
+              ...(attribs.title?.trim() || alt.trim() ? { title: attribs.title?.trim() || alt.trim() } : {}),
+              loading: "lazy",
+            }
+          : {},
+      };
     },
   },
   exclusiveFilter: (frame) => frame.tag === "img" && !frame.attribs.src,
 };
 
 /** Makes editor or pasted HTML safe to store and to render with dangerouslySetInnerHTML. Allow-list based; scripts, events, styles other than colour/alignment and javascript: URLs are removed. */
-export function sanitizeRichText(html: string): string {
-  return sanitizeHtml(html, OPTIONS).trim();
+export function sanitizeRichText(html: string, imageDescriptions?: RichTextImageDescriptions): string {
+  const options: sanitizeHtml.IOptions = {
+    ...OPTIONS,
+    transformTags: {
+      ...OPTIONS.transformTags,
+      img: (tagName, attribs) => {
+        const src = attribs.src ?? "";
+        const mediaId = /^\/media\/(\d+)/i.exec(src)?.[1];
+        const media = mediaId ? imageDescriptions?.get(Number(mediaId)) : undefined;
+        const alt = meaningfulImageDescription(attribs.alt, meaningfulImageDescription(media?.altText, media?.title ?? ""));
+        const title = meaningfulImageDescription(attribs.title, meaningfulImageDescription(media?.title, alt));
+        const ok = /^\/media\/\d+(\?[a-z0-9=&]*)?$/i.test(src) || /^https:\/\//i.test(src);
+        return {
+          tagName,
+          attribs: ok
+            ? {
+                ...attribs,
+                alt,
+                ...(title ? { title } : {}),
+                loading: "lazy",
+              }
+            : {},
+        };
+      },
+    },
+  };
+  return sanitizeHtml(html, options).trim();
 }
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

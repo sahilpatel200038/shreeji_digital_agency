@@ -7,6 +7,7 @@ import { WhatsAppButton } from "@/components/site/whatsapp-button";
 import { ContactSection } from "@/components/site/contact-section";
 import { SiteFooter } from "@/components/site/site-footer";
 import { getSettings } from "@/lib/settings/get";
+import { linkTitle } from "@/lib/link-title";
 
 export const revalidate = 300;
 
@@ -26,6 +27,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       </noscript>
       <a
         href="#main"
+        title={linkTitle("#main")}
         className="sr-only z-[100] rounded-lg bg-gold-300 px-4 py-2 font-semibold text-forest-950 focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
       >
         Skip to main content

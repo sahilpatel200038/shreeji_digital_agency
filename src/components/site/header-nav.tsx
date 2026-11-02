@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Icon } from "@/components/ui/icons";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { linkTitle } from "@/lib/link-title";
 
 type NavChild = { label: string; href: string; openInNewTab: boolean };
 type NavItem = NavChild & { children: NavChild[] };
@@ -163,8 +164,8 @@ export function HeaderNav({
       />
       <div className="container">
       <div className="row flex h-[72px] items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-3" aria-label={`${siteName} home`}>
-          <Image src={logo ?? "/brand/logo-mark.png"} alt="" width={44} height={40} priority className="h-10 w-auto" />
+        <Link href="/" title={linkTitle("/")} className="flex items-center gap-3" aria-label={`${siteName} home`}>
+          <Image src={logo ?? "/brand/logo-mark.png"} alt="Shreeji Digital Agency Logo" title="Shreeji Digital Agency" width={44} height={40} preload className="h-10 w-auto" />
           {(brandName || brandTagline) && (
             <span className="leading-none">
               {brandName && <span className="block font-display text-lg font-extrabold tracking-tight text-forest-900">{brandName}</span>}
@@ -183,6 +184,7 @@ export function HeaderNav({
                 <li key={item.href} className="group relative" onMouseLeave={() => setDropdownsHidden(false)}>
                   <Link
                     href={item.href}
+                    title={linkTitle(item.href, item.label)}
                     onClick={() => onNavigate(item.href)}
                     aria-current={active ? "page" : undefined}
                     className={cn(
@@ -204,7 +206,7 @@ export function HeaderNav({
                       <ul className="rounded-[var(--radius-card)] border border-line bg-white p-2 shadow-[var(--shadow-lift)]">
                         {item.children.map((c) => (
                           <li key={c.href}>
-                            <Link href={c.href} onClick={() => onNavigate(c.href)} className="block rounded-md px-3 py-2 text-[15px] font-medium text-forest-900 hover:bg-forest-50 hover:text-bronze-700">
+                            <Link href={c.href} title={linkTitle(c.href, c.label)} onClick={() => onNavigate(c.href)} className="block rounded-md px-3 py-2 text-[15px] font-medium text-forest-900 hover:bg-forest-50 hover:text-bronze-700">
                               {c.label}
                             </Link>
                           </li>
@@ -223,6 +225,7 @@ export function HeaderNav({
                                 <li key={s.slug}>
                                   <Link
                                     href={`/services/${s.slug}`}
+                                    title={linkTitle(`/services/${s.slug}`, s.title)}
                                     onClick={() => onNavigate(`/services/${s.slug}`)}
                                     className="block rounded-md px-2 py-1.5 text-[15px] font-medium text-forest-900 hover:bg-forest-50 hover:text-bronze-700"
                                   >
@@ -239,7 +242,7 @@ export function HeaderNav({
                             <ul className="grid grid-cols-2 gap-x-6 gap-y-0.5">
                               {item.children.map((c) => (
                                 <li key={`${c.href}-${c.label}`}>
-                                  <Link href={c.href} onClick={() => onNavigate(c.href)} className="block rounded-md px-2 py-1.5 text-[15px] font-medium text-forest-900 hover:bg-forest-50 hover:text-bronze-700">
+                                  <Link href={c.href} title={linkTitle(c.href, c.label)} onClick={() => onNavigate(c.href)} className="block rounded-md px-2 py-1.5 text-[15px] font-medium text-forest-900 hover:bg-forest-50 hover:text-bronze-700">
                                     {c.label}
                                   </Link>
                                 </li>
@@ -300,7 +303,7 @@ export function HeaderNav({
                   const isServices = item.href === "/services" && groups.length > 0;
                   const hasSub = isServices || item.children.length > 0;
                   const link = (href: string, label: string, className: string) => (
-                    <Link href={href} onClick={() => onNavigate(href)} className={className}>
+                    <Link href={href} title={linkTitle(href, label)} onClick={() => onNavigate(href)} className={className}>
                       {label}
                     </Link>
                   );
@@ -351,6 +354,7 @@ export function HeaderNav({
                       ) : (
                         <Link
                           href={item.href}
+                          title={linkTitle(item.href, item.label)}
                           onClick={() => onNavigate(item.href)}
                           aria-current={active ? "page" : undefined}
                           className={cn("flex min-h-12 items-center py-3 text-lg font-semibold", active ? "text-bronze-700" : "text-forest-900")}

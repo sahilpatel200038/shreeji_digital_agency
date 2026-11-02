@@ -6,6 +6,7 @@ import { BannerImage } from "@/components/ui/banner-image";
 import { breadcrumbSchema } from "@/lib/seo/schema";
 import type { BannerImageData } from "@/lib/banner";
 import { cn } from "@/lib/utils";
+import { linkTitle } from "@/lib/link-title";
 
 export type Crumb = { name: string; path: string };
 
@@ -25,7 +26,7 @@ export function Breadcrumbs({ items, tone = "dark" }: { items: Crumb[]; tone?: "
                     {c.name}
                   </span>
                 ) : (
-                  <Link href={c.path} className="underline-offset-4 hover:underline">
+                  <Link href={c.path} title={linkTitle(c.path, c.name)} className="underline-offset-4 hover:underline">
                     {c.name}
                   </Link>
                 )}

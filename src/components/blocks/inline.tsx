@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { isExternal, isSafeHref } from "@/lib/safe-url";
+import { linkTitle } from "@/lib/link-title";
 
 const TOKEN = /(\*\*[^*]+\*\*|\*[^*\s][^*]*\*|\[[^\]]+\]\([^)\s]+\))/g;
 
@@ -19,13 +20,13 @@ export function Inline({ text }: { text: string }): ReactNode {
       if (!isSafeHref(href)) return <span key={i}>{label}</span>;
       if (isExternal(href) || href.startsWith("mailto:") || href.startsWith("tel:")) {
         return (
-          <a key={i} href={href} {...(isExternal(href) ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
+          <a key={i} href={href} title={linkTitle(href, label)} {...(isExternal(href) ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
             {label}
           </a>
         );
       }
       return (
-        <Link key={i} href={href}>
+        <Link key={i} href={href} title={linkTitle(href, label)}>
           {label}
         </Link>
       );

@@ -3,20 +3,24 @@ import Image from "next/image";
 import { Icon } from "@/components/ui/icons";
 import { Pill } from "@/components/ui/layout";
 import { formatDate } from "@/lib/utils";
+import { meaningfulImageDescription, serviceImageAlt, serviceImageTitle } from "@/lib/image-alt";
+import { linkTitle } from "@/lib/link-title";
 
-export type CardMedia = { id: number; checksum?: string | null; altText?: string | null } | null;
+export type CardMedia = { id: number; checksum?: string | null; title?: string | null; altText?: string | null } | null;
 
 export function ServiceCard({ slug, title, summary, icon, featuredMedia }: { slug: string; title: string; summary: string; icon: string; featuredMedia?: CardMedia }) {
   return (
     <Link
       href={`/services/${slug}`}
+      title={linkTitle(`/services/${slug}`)}
       className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-line bg-white transition duration-300 hover:-translate-y-1 hover:border-bronze-300 hover:shadow-[var(--shadow-lift)]"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-forest-900">
         {featuredMedia ? (
           <Image
             src={`/media/${featuredMedia.id}${featuredMedia.checksum ? `?v=${featuredMedia.checksum.slice(0, 8)}` : ""}`}
-            alt={featuredMedia.altText || ""}
+            alt={serviceImageAlt(slug, title, featuredMedia.altText)}
+            title={serviceImageTitle(slug, title, featuredMedia.title)}
             fill
             sizes="(min-width: 1024px) 400px, (min-width: 640px) 45vw, 90vw"
             className="object-cover transition duration-500 group-hover:scale-105"
@@ -75,7 +79,8 @@ export function ProjectCard({
         {mediaId ? (
           <Image
             src={`/media/${mediaId}${checksum ? `?v=${checksum.slice(0, 8)}` : ""}`}
-            alt={alt || `${name} project`}
+            alt={meaningfulImageDescription(alt, `${name} client project`)}
+            title={`${name} – Client Project`}
             fill
             sizes="(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw"
             className="object-contain p-3 transition duration-500 group-hover:scale-105"
@@ -95,6 +100,7 @@ export function ProjectCard({
             href={externalUrl}
             target="_blank"
             rel="noopener noreferrer"
+            title={linkTitle(externalUrl, `the ${name} project website`)}
             className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-bronze-700 hover:underline"
           >
             Visit project <Icon name="arrow-up-right" size={16} />
@@ -127,7 +133,7 @@ export function PostCard({
 }) {
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-line bg-white transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)]">
-      <Link href={`/blog/${slug}`} className="block" tabIndex={-1} aria-hidden="true">
+      <Link href={`/blog/${slug}`} title={linkTitle(`/blog/${slug}`)} className="block" tabIndex={-1} aria-hidden="true">
         <div className="relative aspect-[16/9] overflow-hidden bg-forest-50">
           {thumbnailMediaId || featuredMediaId ? (
             <Image src={`/media/${thumbnailMediaId ?? featuredMediaId}`} alt="" fill sizes="(min-width: 1024px) 380px, 100vw" className="object-cover transition duration-500 group-hover:scale-105" />
@@ -146,7 +152,7 @@ export function PostCard({
           <span>{readingMinutes} min read</span>
         </div>
         <h3 className="t-h3 mt-3 !text-xl">
-          <Link href={`/blog/${slug}`} className="hover:text-bronze-700">
+          <Link href={`/blog/${slug}`} title={linkTitle(`/blog/${slug}`)} className="hover:text-bronze-700">
             {title}
           </Link>
         </h3>

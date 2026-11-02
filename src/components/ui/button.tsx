@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icons";
+import { linkTitle } from "@/lib/link-title";
 
 type Variant = "primary" | "accent" | "outline" | "ghost" | "light" | "danger";
 type Size = "sm" | "md" | "lg";
@@ -50,6 +51,7 @@ export function ButtonLink({
     return (
       <a
         href={href}
+        title={linkTitle(href)}
         className={buttonClasses(variant, size, className)}
         {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
       >
@@ -58,7 +60,7 @@ export function ButtonLink({
     );
   }
   return (
-    <Link href={href} onClick={onClick} className={buttonClasses(variant, size, className)}>
+    <Link href={href} title={linkTitle(href)} onClick={onClick} className={buttonClasses(variant, size, className)}>
       {content}
     </Link>
   );

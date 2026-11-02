@@ -1,5 +1,6 @@
 import { getSettings } from "@/lib/settings/get";
 import { whatsappUrl } from "@/lib/whatsapp";
+import { linkTitle } from "@/lib/link-title";
 
 /** Floating WhatsApp chat link. Uses Admin > Settings > Contact > WhatsApp number, falling back to the contact phone. Hidden only if neither is a valid number. */
 export async function WhatsAppButton() {
@@ -13,7 +14,7 @@ export async function WhatsAppButton() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`Chat with ${general.siteName} on WhatsApp (opens in a new tab)`}
-      title="Chat on WhatsApp"
+      title={linkTitle(href)}
       className="fixed right-4 bottom-4 z-30 grid size-14 place-items-center rounded-full bg-[#25d366] text-white shadow-[var(--shadow-lift)] transition hover:scale-105 hover:bg-[#1ebe5a] focus-visible:outline-offset-4 sm:right-6 sm:bottom-6 print:hidden"
     >
       <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true">

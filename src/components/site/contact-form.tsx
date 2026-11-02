@@ -6,6 +6,7 @@ import { startTransition, useActionState, useEffect, useRef, useState } from "re
 import { submitLead, type ContactState } from "@/actions/contact";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icons";
+import { linkTitle } from "@/lib/link-title";
 
 function Field({
   label,
@@ -135,7 +136,7 @@ export function ContactForm({ services }: { services: { slug: string; title: str
       <Button type="submit" variant="primary" size="lg" loading={pending} arrow className="w-full sm:w-auto">
         {pending ? "Sending…" : "Send enquiry"}
       </Button>
-      <p className="text-sm text-muted">We use your details only to respond to your enquiry. See our <Link href="/privacy-policy" className="font-semibold text-bronze-700 underline">Privacy Policy</Link>.</p>
+      <p className="text-sm text-muted">We use your details only to respond to your enquiry. See our <Link href="/privacy-policy" title={linkTitle("/privacy-policy")} className="font-semibold text-bronze-700 underline">Privacy Policy</Link>.</p>
     </form>
   );
 }

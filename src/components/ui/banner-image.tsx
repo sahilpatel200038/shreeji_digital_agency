@@ -5,7 +5,7 @@ import { useState } from "react";
 import type { BannerImageData } from "@/lib/banner";
 
 /** Right-hand banner picture. If the chosen image fails to load it swaps to the bundled photo, never a broken icon. */
-export function BannerImage({ image, priority = true }: { image: BannerImageData; priority?: boolean }) {
+export function BannerImage({ image, preload = true }: { image: BannerImageData; preload?: boolean }) {
   const [failed, setFailed] = useState(false);
   const src = failed ? image.fallbackSrc : image.src;
   return (
@@ -13,9 +13,10 @@ export function BannerImage({ image, priority = true }: { image: BannerImageData
       <Image
         key={src}
         src={src}
-        alt={image.alt}
+        alt={failed ? image.fallbackAlt : image.alt}
+        title={failed ? image.fallbackTitle : image.title}
         fill
-        priority={priority}
+        preload={preload}
         sizes="(min-width: 1024px) 40vw, (min-width: 640px) 80vw, 100vw"
         className="object-cover"
         onError={() => setFailed(true)}

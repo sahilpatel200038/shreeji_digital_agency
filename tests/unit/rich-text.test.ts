@@ -37,8 +37,16 @@ describe("sanitizeRichText", () => {
 
   it("opens external links safely", () => {
     const out = sanitizeRichText('<a href="https://example.com">e</a><a href="/about">i</a>');
-    expect(out).toContain('href="https://example.com" target="_blank" rel="noopener noreferrer"');
-    expect(out).toContain('<a href="/about">i</a>');
+    expect(out).toContain('href="https://example.com" title="Visit example.com" target="_blank" rel="noopener noreferrer"');
+    expect(out).toContain('<a href="/about" title="About Shreeji Digital Agency">i</a>');
+  });
+
+  it("uses CMS media metadata to fill missing rich-text image descriptions", () => {
+    const descriptions = new Map([[12, { title: "Coffee shop project", altText: "A customer paying at a coffee shop counter" }]]);
+    const out = sanitizeRichText('<img src="/media/12">', descriptions);
+    expect(out).toContain('alt="A customer paying at a coffee shop counter"');
+    expect(out).toContain('title="Coffee shop project"');
+    expect(out).toContain('loading="lazy"');
   });
 });
 
@@ -58,7 +66,7 @@ describe("blocksToHtml (legacy posts open in the rich text editor)", () => {
     expect(html).toContain("<h2>Why &lt;b&gt;SEO&lt;/b&gt;</h2>");
     expect(html).toContain("<strong>bold</strong>");
     expect(html).toContain("<em>italic</em>");
-    expect(html).toContain('<a href="/contact">a link</a>');
+    expect(html).toContain('<a href="/contact" title="Contact Shreeji Digital Agency">a link</a>');
     expect(html).toContain("<ol>");
     expect(html).toContain('src="/media/7"');
     expect(html).toContain("Figure 1");

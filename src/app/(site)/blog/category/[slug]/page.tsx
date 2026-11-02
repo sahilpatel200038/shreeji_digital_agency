@@ -13,6 +13,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { Stagger, StaggerItem } from "@/components/motion/reveal";
 import { PostCard } from "@/components/site/cards";
 import { cn } from "@/lib/utils";
+import { linkTitle } from "@/lib/link-title";
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ page?: string }> };
 
@@ -50,13 +51,13 @@ export default async function BlogCategoryPage({ params, searchParams }: Props) 
       />
       <Section>
         <nav aria-label="Blog categories" className="mb-10 flex flex-wrap gap-3">
-          <Link href="/blog" className={cn(chip, "border-line bg-white hover:border-bronze-300")}>
+          <Link href="/blog" title={linkTitle("/blog")} className={cn(chip, "border-line bg-white hover:border-bronze-300")}>
             All
           </Link>
           {categories
             .filter((c) => c._count.posts > 0 || c.slug === slug)
             .map((c) => (
-              <Link key={c.id} href={`/blog/category/${c.slug}`} aria-current={c.slug === slug ? "true" : undefined} className={cn(chip, c.slug === slug ? "border-forest-900 bg-forest-900 text-white" : "border-line bg-white hover:border-bronze-300")}>
+              <Link key={c.id} href={`/blog/category/${c.slug}`} title={linkTitle(`/blog/category/${c.slug}`, c.name)} aria-current={c.slug === slug ? "true" : undefined} className={cn(chip, c.slug === slug ? "border-forest-900 bg-forest-900 text-white" : "border-line bg-white hover:border-bronze-300")}>
                 {c.name}
               </Link>
             ))}

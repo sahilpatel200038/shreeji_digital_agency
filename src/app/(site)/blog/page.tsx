@@ -15,6 +15,7 @@ import { Stagger, StaggerItem } from "@/components/motion/reveal";
 import { PostCard } from "@/components/site/cards";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { linkTitle } from "@/lib/link-title";
 
 type Props = { searchParams: Promise<{ q?: string; page?: string }> };
 
@@ -46,13 +47,13 @@ export default async function BlogPage({ searchParams }: Props) {
       <Section>
         <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <nav aria-label="Blog categories" className="flex flex-wrap gap-3">
-            <Link href="/blog" aria-current="true" className={cn(chip, "border-forest-900 bg-forest-900 text-white")}>
+            <Link href="/blog" title={linkTitle("/blog")} aria-current="true" className={cn(chip, "border-forest-900 bg-forest-900 text-white")}>
               All
             </Link>
             {categories
               .filter((c) => c._count.posts > 0)
               .map((c) => (
-                <Link key={c.id} href={`/blog/category/${c.slug}`} className={cn(chip, "border-line bg-white hover:border-bronze-300")}>
+                <Link key={c.id} href={`/blog/category/${c.slug}`} title={linkTitle(`/blog/category/${c.slug}`, c.name)} className={cn(chip, "border-line bg-white hover:border-bronze-300")}>
                   {c.name}
                 </Link>
               ))}

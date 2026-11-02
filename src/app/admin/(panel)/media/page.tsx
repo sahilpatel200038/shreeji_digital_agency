@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { requirePagePermission } from "@/lib/auth/session";
 import { Empty, FilterBar, Flash, PageHeader, Pager } from "@/components/admin/ui";
 import { UploadZone } from "@/components/admin/upload-zone";
+import { meaningfulImageDescription } from "@/lib/image-alt";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 24;
@@ -37,7 +38,7 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
             <li key={m.id}>
               <Link href={`/admin/media/${m.id}`} className="group block overflow-hidden rounded-[var(--radius-card)] border border-line bg-white transition hover:border-bronze-300 hover:shadow-[var(--shadow-soft)]">
                 <span className="relative block aspect-square bg-forest-50">
-                  <Image src={`/media/${m.id}?v=${m.checksum.slice(0, 8)}`} alt={m.altText} fill sizes="200px" className="object-contain p-2" unoptimized />
+                  <Image src={`/media/${m.id}?v=${m.checksum.slice(0, 8)}`} alt={meaningfulImageDescription(m.altText, m.title)} title={m.title} fill sizes="200px" className="object-contain p-2" unoptimized />
                 </span>
                 <span className="block p-3">
                   <span className="block truncate text-sm font-semibold">{m.title}</span>

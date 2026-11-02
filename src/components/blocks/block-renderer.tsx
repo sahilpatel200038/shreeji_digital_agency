@@ -1,18 +1,26 @@
 import Image from "next/image";
-import type { Block } from "@/lib/blocks/schema";
+import { mediaIdsInBlocks, type Block } from "@/lib/blocks/schema";
 import { Inline } from "@/components/blocks/inline";
 import { FaqAccordion } from "@/components/ui/faq-accordion";
 import { ButtonLink } from "@/components/ui/button";
 import { sanitizeRichText } from "@/lib/rich-text";
+import { meaningfulImageDescription } from "@/lib/image-alt";
+import { db } from "@/lib/db";
 
-export function BlockRenderer({ blocks }: { blocks: Block[] }) {
+export async function BlockRenderer({ blocks }: { blocks: Block[] }) {
+  const mediaIds = [...new Set(mediaIdsInBlocks(blocks))];
+  const media = mediaIds.length
+    ? await db.media.findMany({ where: { id: { in: mediaIds } }, select: { id: true, title: true, altText: true } })
+    : [];
+  const imageDescriptions = new Map(media.map((item) => [item.id, { title: item.title, altText: item.altText }]));
+
   return (
     <div className="prose-brand space-y-5 text-[1.0625rem]">
       {blocks.map((b, i) => {
         switch (b.type) {
           case "richtext":
             // Sanitised again at render time, so content stored before the sanitiser existed (or edited in the database) is safe too.
-            return <div key={i} className="rich-content" dangerouslySetInnerHTML={{ __html: sanitizeRichText(b.html) }} />;
+            return <div key={i} className="rich-content" dangerouslySetInnerHTML={{ __html: sanitizeRichText(b.html, imageDescriptions) }} />;
           case "heading":
             return b.level === 2 ? (
               <h2 key={i} className="t-h2 !mt-12 first:!mt-0">
@@ -45,7 +53,14 @@ export function BlockRenderer({ blocks }: { blocks: Block[] }) {
             return (
               <figure key={i} className="!my-8">
                 <div className="relative aspect-video overflow-hidden rounded-[var(--radius-card)] bg-forest-50">
-                  <Image src={`/media/${b.mediaId}`} alt={b.alt} fill sizes="(min-width: 820px) 780px, 100vw" className="object-cover" />
+                  <Image
+                    src={`/media/${b.mediaId}`}
+                    alt={meaningfulImageDescription(b.alt, imageDescriptions.get(b.mediaId)?.altText || imageDescriptions.get(b.mediaId)?.title || b.caption)}
+                    title={meaningfulImageDescription(imageDescriptions.get(b.mediaId)?.title || b.caption || b.alt, "") || undefined}
+                    fill
+                    sizes="(min-width: 820px) 780px, 100vw"
+                    className="object-cover"
+                  />
                 </div>
                 {b.caption && <figcaption className="mt-2 text-center text-sm text-muted">{b.caption}</figcaption>}
               </figure>

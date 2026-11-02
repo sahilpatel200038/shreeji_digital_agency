@@ -15,6 +15,7 @@ import { JsonLd } from "@/components/ui/json-ld";
 import { PostCard } from "@/components/site/cards";
 import { BlockRenderer } from "@/components/blocks/block-renderer";
 import { formatDate } from "@/lib/utils";
+import { linkTitle } from "@/lib/link-title";
 
 export const revalidate = 300;
 
@@ -84,7 +85,8 @@ export default async function BlogPostPage({ params }: Props) {
         image={resolveBanner("blog", post.featuredMedia ?? blogBanner, post.title)}
       >
         <p className="text-sm text-white/70">
-          By {post.author.name}
+          {/* By {post.author.name} */}
+          By Shreeji Digital Expert
           {post.publishedAt && (
             <>
               {" · "}
@@ -109,7 +111,7 @@ export default async function BlogPostPage({ params }: Props) {
             </ul>
           )}
           <p className="mt-8">
-            <Link href="/blog" className="font-semibold text-bronze-700 hover:underline">
+            <Link href="/blog" title={linkTitle("/blog")} className="font-semibold text-bronze-700 hover:underline">
               ← Back to all articles
             </Link>
           </p>

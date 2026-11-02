@@ -5,7 +5,7 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { getProjects, getServiceBySlug } from "@/lib/data/public";
 import { getSettings } from "@/lib/settings/get";
 import { resolveBanner } from "@/lib/banner";
-import { faqSchema, serviceSchema } from "@/lib/seo/schema";
+import { breadcrumbSchema, faqSchema, serviceSchema } from "@/lib/seo/schema";
 import { PageHero } from "@/components/ui/breadcrumbs";
 import { Section, SectionHeading } from "@/components/ui/layout";
 import { ButtonLink } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { Reveal, Stagger, StaggerItem } from "@/components/motion/reveal";
 import { FaqAccordion } from "@/components/ui/faq-accordion";
 import { ServicesSliderSection } from "@/components/site/slider-sections";
 import { BlockRenderer } from "@/components/blocks/block-renderer";
+import { serviceImageAlt, serviceImageTitle } from "@/lib/image-alt";
 
 export const revalidate = 300;
 export const dynamicParams = true;
@@ -58,6 +59,11 @@ export default async function ServiceDetailPage({ params }: Props) {
       {autoSchema && (
         <JsonLd data={serviceSchema({ name: service.title, description: service.summary, path, categoryName: service.category.name, s: settings })} />
       )}
+      <JsonLd data={breadcrumbSchema([
+        { name: "Home", path: "/" },
+        { name: "Services", path: "/services" },
+        { name: service.title, path },
+      ])} />
 
       {showFaqs && <JsonLd data={faqSchema(service.faqs.map((f) => ({ question: f.question, answer: f.answer })))} />}
 
@@ -65,7 +71,12 @@ export default async function ServiceDetailPage({ params }: Props) {
         eyebrow={service.category.name}
         title={service.heroHeading || service.title}
         intro={service.summary}
-        image={resolveBanner("services", service.featuredMedia, service.title)}
+        image={resolveBanner(
+          "services",
+          service.featuredMedia,
+          serviceImageAlt(service.slug, service.title, service.featuredMedia?.altText),
+          serviceImageTitle(service.slug, service.title, service.featuredMedia?.title),
+        )}
       >
         {o.primaryLabel && (
           <ButtonLink href={o.primaryHref || "#contact"} variant="accent" size="lg" arrow>

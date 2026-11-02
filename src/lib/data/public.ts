@@ -37,7 +37,7 @@ export const getServicesGrouped = cache(async () => {
       services: {
         where: publishedWhere(),
         orderBy: { sortOrder: "asc" },
-        select: { id: true, slug: true, title: true, summary: true, icon: true, isFeatured: true, featuredMedia: { select: { id: true, checksum: true, altText: true } }, },
+        select: { id: true, slug: true, title: true, summary: true, icon: true, isFeatured: true, featuredMedia: { select: { id: true, checksum: true, title: true, altText: true } }, },
       },
     },
   });
@@ -48,7 +48,7 @@ export const getPublishedServices = cache(async () =>
   db.service.findMany({
     where: publishedWhere(),
     orderBy: { sortOrder: "asc" },
-    select: { id: true, slug: true, title: true, summary: true, icon: true, isFeatured: true, featuredMedia: { select: { id: true, checksum: true, altText: true } }, category: { select: { name: true, slug: true } } },
+    select: { id: true, slug: true, title: true, summary: true, icon: true, isFeatured: true, featuredMedia: { select: { id: true, checksum: true, title: true, altText: true } }, category: { select: { name: true, slug: true } } },
   }),
 );
 
@@ -64,7 +64,7 @@ export const getServiceBySlug = cache(async (slug: string) => {
       featuredMedia: BANNER_MEDIA,
       faqs: { where: { status: "PUBLISHED" }, orderBy: [{ sortOrder: "asc" }, { id: "asc" }] },
       related: {
-        include: { related: { select: { id: true, slug: true, title: true, summary: true, icon: true, status: true, publishedAt: true, featuredMedia: { select: { id: true, checksum: true, altText: true } }, } } },
+        include: { related: { select: { id: true, slug: true, title: true, summary: true, icon: true, status: true, publishedAt: true, featuredMedia: { select: { id: true, checksum: true, title: true, altText: true } }, } } },
       },
     },
   });
@@ -111,7 +111,7 @@ export const getTeamMembers = cache(async () =>
   }),
 );
 
-const BANNER_MEDIA = { select: { id: true, checksum: true, altText: true } } as const;
+const BANNER_MEDIA = { select: { id: true, checksum: true, title: true, altText: true } } as const;
 
 /** The admin-chosen banner image for a settings-managed page (home, services, blog, FAQ), if it still exists. */
 export const getBannerMedia = cache(async (id: number | null) =>

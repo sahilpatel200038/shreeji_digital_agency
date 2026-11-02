@@ -5,6 +5,8 @@ import { getSettings } from "@/lib/settings/get";
 import { Container, Row } from "@/components/ui/layout";
 import { Icon } from "@/components/ui/icons";
 import { isExternal } from "@/lib/safe-url";
+import { meaningfulImageDescription } from "@/lib/image-alt";
+import { linkTitle } from "@/lib/link-title";
 
 function FooterLinks({ title, links, twoColumns, className }: { title: string; links: { label: string; href: string; openInNewTab?: boolean }[]; twoColumns?: boolean; className?: string }) {
   return (
@@ -14,11 +16,11 @@ function FooterLinks({ title, links, twoColumns, className }: { title: string; l
         {links.map((l) => (
           <li key={`${l.href}-${l.label}`}>
             {isExternal(l.href) ? (
-              <a href={l.href} target={l.openInNewTab ? "_blank" : undefined} rel="noopener noreferrer" className="text-white/80 hover:text-white">
+              <a href={l.href} title={linkTitle(l.href, l.label)} target={l.openInNewTab ? "_blank" : undefined} rel="noopener noreferrer" className="text-white/80 hover:text-white">
                 {l.label}
               </a>
             ) : (
-              <Link href={l.href} className="text-white/80 hover:text-white">
+              <Link href={l.href} title={linkTitle(l.href, l.label)} className="text-white/80 hover:text-white">
                 {l.label}
               </Link>
             )}
@@ -58,8 +60,15 @@ export async function SiteFooter() {
         <Row>
         <div className={`grid gap-12 ${footer.showServices && shownServices.length > 0 ? "lg:grid-cols-2 lg:gap-x-16" : ""}`}>
           <div>
-            <Link href="/" className="inline-flex items-center gap-3" aria-label={`${general.siteName} home`}>
-              <Image src={logoMedia ? `/media/${logoMedia.id}?v=${logoMedia.checksum.slice(0, 8)}` : "/brand/logo-mark.png"} alt="" width={48} height={44} className="h-11 w-auto" />
+            <Link href="/" title={linkTitle("/")} className="inline-flex items-center gap-3" aria-label={`${general.siteName} home`}>
+              <Image
+                src={logoMedia ? `/media/${logoMedia.id}?v=${logoMedia.checksum.slice(0, 8)}` : "/brand/logo-mark.png"}
+                alt={meaningfulImageDescription(logoMedia?.altText, "Shreeji Digital Agency Logo")}
+                title="Shreeji Digital Agency"
+                width={48}
+                height={44}
+                className="h-11 w-auto"
+              />
               {(footer.brandName || footer.brandTagline) && (
                 <span className="leading-none">
                   {footer.brandName && <span className="block font-display text-xl font-extrabold tracking-tight text-white">{footer.brandName}</span>}
@@ -78,6 +87,7 @@ export async function SiteFooter() {
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={`${general.siteName} on ${s.name}`}
+                      title={linkTitle(s.href, s.name)}
                       className="grid size-11 place-items-center rounded-full border border-white/20 text-white transition hover:border-gold-300 hover:text-gold-300"
                     >
                       <Icon name={s.icon} size={20} />
@@ -102,13 +112,13 @@ export async function SiteFooter() {
                 </p>
                 <p className="flex gap-3">
                   <Icon name="phone" size={20} className="mt-1 shrink-0 text-bronze-300" />
-                  <a href={`tel:${contact.phone.replace(/[^+\d]/g, "")}`} className="hover:text-white">
+                  <a href={`tel:${contact.phone.replace(/[^+\d]/g, "")}`} title={linkTitle(`tel:${contact.phone}`)} className="hover:text-white">
                     {contact.phone}
                   </a>
                 </p>
                 <p className="flex gap-3">
                   <Icon name="mail" size={20} className="mt-1 shrink-0 text-bronze-300" />
-                  <a href={`mailto:${contact.email}`} className="[overflow-wrap:anywhere] hover:text-white">
+                  <a href={`mailto:${contact.email}`} title={linkTitle(`mailto:${contact.email}`)} className="[overflow-wrap:anywhere] hover:text-white">
                     {contact.email}
                   </a>
                 </p>

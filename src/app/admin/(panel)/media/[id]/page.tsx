@@ -9,6 +9,7 @@ import { ConfirmButton } from "@/components/admin/confirm-button";
 import { deleteMedia, replaceMedia, updateMedia } from "@/actions/media";
 import { findMediaUsage } from "@/lib/media/usage";
 import { formatDate } from "@/lib/utils";
+import { meaningfulImageDescription } from "@/lib/image-alt";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export default async function MediaDetail({ params, searchParams }: { params: Pr
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
         <Card title="Preview">
           <div className="relative aspect-video overflow-hidden rounded-lg bg-forest-50">
-            <Image src={`/media/${m.id}?v=${m.checksum.slice(0, 8)}`} alt={m.altText} fill sizes="600px" className="object-contain" unoptimized />
+            <Image src={`/media/${m.id}?v=${m.checksum.slice(0, 8)}`} alt={meaningfulImageDescription(m.altText, m.title)} title={m.title} fill sizes="600px" className="object-contain" unoptimized />
           </div>
           <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
             <dt className="text-muted">Dimensions</dt><dd>{m.width} × {m.height}px</dd>

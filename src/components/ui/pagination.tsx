@@ -16,7 +16,7 @@ export function Pagination({
   return (
     <nav aria-label="Pagination" className="mt-12 flex flex-wrap items-center justify-center gap-2">
       {page > 1 && (
-        <Link href={makeHref(page - 1)} rel="prev" className={cn(item, "border border-line bg-white hover:border-bronze-300")}>
+        <Link href={makeHref(page - 1)} title={`Go to page ${page - 1}`} rel="prev" className={cn(item, "border border-line bg-white hover:border-bronze-300")}>
           Previous
         </Link>
       )}
@@ -25,6 +25,7 @@ export function Pagination({
           {i > 0 && n - nums[i - 1] > 1 && <span aria-hidden="true">…</span>}
           <Link
             href={makeHref(n)}
+            title={`Go to page ${n}`}
             aria-current={n === page ? "page" : undefined}
             className={cn(item, n === page ? "bg-forest-900 text-white" : "border border-line bg-white hover:border-bronze-300")}
           >
@@ -33,7 +34,7 @@ export function Pagination({
         </span>
       ))}
       {page < pages && (
-        <Link href={makeHref(page + 1)} rel="next" className={cn(item, "border border-line bg-white hover:border-bronze-300")}>
+        <Link href={makeHref(page + 1)} title={`Go to page ${page + 1}`} rel="next" className={cn(item, "border border-line bg-white hover:border-bronze-300")}>
           Next
         </Link>
       )}
