@@ -12,11 +12,13 @@ export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
   const { analytics } = await getSettings();
-  return analytics.gscToken ? { verification: { google: analytics.gscToken } } : {};
+  const gscToken = analytics.gscToken || "6e4dPbzsA509i05ha2jh1wBOmz_bvJhJuSgZ749_FsQ";
+  return { verification: { google: gscToken } };
 }
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const { analytics } = await getSettings();
+  const ga4Id = analytics.ga4 || "G-SFC5XDFFKS";
   return (
     <>
       <noscript>
@@ -38,10 +40,10 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       {analytics.gtm && (
         <Script id="gtm" strategy="afterInteractive">{`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${analytics.gtm}');`}</Script>
       )}
-      {analytics.ga4 && !analytics.gtm && (
+      {ga4Id && !analytics.gtm && (
         <>
-          <Script src={`https://www.googletagmanager.com/gtag/js?id=${analytics.ga4}`} strategy="afterInteractive" />
-          <Script id="ga4" strategy="afterInteractive">{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${analytics.ga4}');`}</Script>
+          <Script src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`} strategy="afterInteractive" />
+          <Script id="ga4" strategy="afterInteractive">{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${ga4Id}');`}</Script>
         </>
       )}
     </>

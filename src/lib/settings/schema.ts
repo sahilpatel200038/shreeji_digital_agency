@@ -222,7 +222,7 @@ export const footerSchema = z.object({
 });
 
 export const analyticsSchema = z.object({
-  ga4: z.string().trim().default("").refine((v) => v === "" || /^G-[A-Z0-9]{4,20}$/.test(v), "Format: G-XXXXXXXXXX"),
+  ga4: z.string().trim().default("G-SFC5XDFFKS").refine((v) => v === "" || /^G-[A-Z0-9]{4,20}$/.test(v), "Format: G-XXXXXXXXXX"),
   gtm: z.string().trim().default("").refine((v) => v === "" || /^GTM-[A-Z0-9]{4,12}$/.test(v), "Format: GTM-XXXXXXX"),
   gscToken: z.string().trim().default("").refine((v) => v === "" || /^[A-Za-z0-9_-]{10,100}$/.test(v), "Letters, numbers, - and _ only"),
 });

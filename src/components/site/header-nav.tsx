@@ -214,7 +214,7 @@ export function HeaderNav({
                   )}
                   {hasMenu && (
                     <div className={cn("invisible absolute top-full left-1/2 z-50 w-[560px] -translate-x-1/2 pt-2 opacity-0 transition duration-200 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100", dropdownsHidden && "!invisible !opacity-0 pointer-events-none")}>
-                      <div className="grid grid-cols-2 gap-6 rounded-[var(--radius-card)] border border-line bg-white p-6 shadow-[var(--shadow-lift)]">
+                      <div className="h-[500px] overflow-y-auto grid grid-cols-2 gap-6 rounded-[var(--radius-card)] border border-line bg-white p-6 shadow-[var(--shadow-lift)]">
                         {groups.map((g) => (
                           <div key={g.name}>
                             <p className="mb-2 text-xs font-bold tracking-[0.14em] text-bronze-700 uppercase">{g.name}</p>
