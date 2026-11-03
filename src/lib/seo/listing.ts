@@ -70,6 +70,8 @@ export async function listingSeo(key: ListingKey): Promise<NonNullable<SeoInput>
     ogTitle: row?.ogTitle,
     ogDescription: row?.ogDescription,
     ogMediaId: row?.ogMediaId,
+    focusKeyword: row?.focusKeyword,
+    secondaryKeywords: row?.secondaryKeywords,
   };
 }
 

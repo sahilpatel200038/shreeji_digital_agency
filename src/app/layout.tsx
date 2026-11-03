@@ -10,6 +10,9 @@ const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakart
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   applicationName: "Shreeji Marketing",
+  authors: [{ name: "Shreeji Digital Agency" }],
+  publisher: "Shreeji Digital Agency",
+  keywords: ["digital marketing agency", "web development", "SEO services", "Ahmedabad"],
 };
 
 export const viewport: Viewport = {

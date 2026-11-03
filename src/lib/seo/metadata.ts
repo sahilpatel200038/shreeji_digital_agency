@@ -12,6 +12,8 @@ export type SeoInput = {
   ogTitle?: string | null;
   ogDescription?: string | null;
   ogMediaId?: number | null;
+  focusKeyword?: string | null;
+  secondaryKeywords?: unknown;
 } | null;
 
 type Args = {
@@ -41,9 +43,17 @@ export async function buildMetadata(args: Args): Promise<Metadata> {
   const imageId = seo?.ogMediaId ?? args.imageMediaId ?? s.seo.ogMediaId;
   const images = imageId ? [{ url: absoluteUrl(`/media/${imageId}`) }] : undefined;
 
+  const secondary = Array.isArray(seo?.secondaryKeywords) ? (seo.secondaryKeywords as unknown[]).filter((k): k is string => typeof k === "string") : [];
+  const keywords = [...new Set([seo?.focusKeyword?.trim(), ...secondary].filter((k): k is string => !!k && k.trim().length > 0))];
+  // No admin-set keywords yet: fall back to this page's own title so the tag still varies per page.
+  if (keywords.length === 0) keywords.push(args.fallbackTitle.trim());
+
   return {
     title: { absolute: title },
     description,
+    keywords,
+    authors: [{ name: s.general.legalName }],
+    publisher: s.general.legalName,
     alternates: { canonical },
     robots: { index, follow },
     openGraph: {
